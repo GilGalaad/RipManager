@@ -33,7 +33,11 @@
                       <Component id="sourceButton" min="-2" max="-2" attributes="0"/>
                   </Group>
                   <Component id="analyzeButton" max="32767" attributes="0"/>
-                  <Component id="progressBar" alignment="0" max="32767" attributes="0"/>
+                  <Group type="102" alignment="0" attributes="0">
+                      <Component id="progressBar" max="32767" attributes="0"/>
+                      <EmptySpace max="-2" attributes="0"/>
+                      <Component id="etaLabel" min="-2" pref="80" max="-2" attributes="0"/>
+                  </Group>
               </Group>
               <EmptySpace type="separate" max="-2" attributes="0"/>
               <Component id="outputScrollPane" pref="781" max="32767" attributes="0"/>
@@ -54,7 +58,10 @@
                       <EmptySpace max="-2" attributes="0"/>
                       <Component id="analyzeButton" min="-2" max="-2" attributes="0"/>
                       <EmptySpace max="32767" attributes="0"/>
-                      <Component id="progressBar" min="-2" pref="25" max="-2" attributes="0"/>
+                      <Group type="103" groupAlignment="3" attributes="0">
+                          <Component id="progressBar" alignment="3" min="-2" pref="25" max="-2" attributes="0"/>
+                          <Component id="etaLabel" alignment="3" min="-2" max="-2" attributes="0"/>
+                      </Group>
                   </Group>
                   <Component id="outputScrollPane" pref="778" max="32767" attributes="0"/>
               </Group>
@@ -67,7 +74,6 @@
     <Component class="javax.swing.JTextField" name="sourceTextField">
       <Properties>
         <Property name="editable" type="boolean" value="false"/>
-        <Property name="text" type="java.lang.String" value="D:\u005ciso\u005cvideo.mkv" containsInvalidXMLChars="true"/>
       </Properties>
       <AuxValues>
         <AuxValue name="JavaCodeGenerator_VariableModifier" type="java.lang.Integer" value="4"/>
@@ -91,6 +97,7 @@
     </Component>
     <Container class="javax.swing.JScrollPane" name="outputScrollPane">
       <AuxValues>
+        <AuxValue name="JavaCodeGenerator_VariableModifier" type="java.lang.Integer" value="4"/>
         <AuxValue name="autoScrollPane" type="java.lang.Boolean" value="true"/>
       </AuxValues>
 
@@ -108,6 +115,17 @@
       </SubComponents>
     </Container>
     <Component class="javax.swing.JProgressBar" name="progressBar">
+      <Properties>
+        <Property name="stringPainted" type="boolean" value="true"/>
+      </Properties>
+      <AuxValues>
+        <AuxValue name="JavaCodeGenerator_VariableModifier" type="java.lang.Integer" value="4"/>
+      </AuxValues>
+    </Component>
+    <Component class="javax.swing.JLabel" name="etaLabel">
+      <Properties>
+        <Property name="horizontalAlignment" type="int" value="4"/>
+      </Properties>
       <AuxValues>
         <AuxValue name="JavaCodeGenerator_VariableModifier" type="java.lang.Integer" value="4"/>
       </AuxValues>

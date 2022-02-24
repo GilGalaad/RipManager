@@ -2,7 +2,7 @@ package ripmanager.worker;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
-import ripmanager.common.StringUtils;
+import ripmanager.common.CommonUtils;
 import ripmanager.gui.RipManagerImpl;
 
 import javax.swing.*;
@@ -14,6 +14,8 @@ import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import static ripmanager.common.CommonUtils.calcEta;
 
 @Log4j2
 @RequiredArgsConstructor
@@ -32,13 +34,13 @@ public class Eac3toWorker extends SwingWorker<ProcessOutcome, Void> {
         args.add(0, "python.exe");
         args.add(1, "c:\\dvd-rip\\python\\run_cmd.py");
         args.add(2, "eac3to.exe");
-        args.add("4:asd.sup");
         args.add("-log=NUL");
         args.add("-progressnumbers");
         log.info("Running: {}", String.join(" ", args));
         ProcessBuilder pb = new ProcessBuilder(args.toArray(new String[0]));
         pb.directory(new File("d:\\iso"));
         pb.redirectErrorStream(true);
+        long startTime = System.nanoTime();
         Process p = pb.start();
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()))) {
             String line;
@@ -52,10 +54,11 @@ public class Eac3toWorker extends SwingWorker<ProcessOutcome, Void> {
                     int progress = Integer.parseInt(m.group("progress"));
                     setProgress(Math.min(progress, 100));
                 } else {
-                    output.append(StringUtils.rtrim(line));
+                    output.append(CommonUtils.rtrim(line));
                     output.append(System.lineSeparator());
                     firePropertyChange("output", null, output.toString());
                 }
+                firePropertyChange("eta", null, calcEta(startTime, getProgress()));
             }
         }
         p.waitFor();
@@ -74,4 +77,5 @@ public class Eac3toWorker extends SwingWorker<ProcessOutcome, Void> {
             frame.analyzeTaskCallback(ex);
         }
     }
+
 }

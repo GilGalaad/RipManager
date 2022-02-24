@@ -12,18 +12,27 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
-import static ripmanager.common.StringUtils.isEmpty;
+import static ripmanager.common.CommonUtils.formatInterval;
+import static ripmanager.common.CommonUtils.isEmpty;
 
 @Log4j2
 public class RipManagerImpl extends RipManager {
+
+    public static final String ETA_DEFAULT = "ETA: 00:00:00";
 
     private boolean running = false;
     private SwingWorker<ProcessOutcome, Void> worker;
 
     public RipManagerImpl() {
         super();
+        initComponents();
         sourceButton.addActionListener(e -> sourceButtonClicked());
         analyzeButton.addActionListener(e -> analyzeButtonClicked());
+    }
+
+    private void initComponents() {
+        sourceTextField.setText("D:\\iso\\video.mkv");
+        etaLabel.setText(ETA_DEFAULT);
     }
 
     public void startBackgroundTask() {
@@ -32,6 +41,7 @@ public class RipManagerImpl extends RipManager {
         //analyzeButton.setEnabled(false);
         analyzeButton.setText("Abort");
         progressBar.setValue(0);
+        etaLabel.setText(ETA_DEFAULT);
     }
 
     public void endBackgroundTask() {
@@ -40,6 +50,7 @@ public class RipManagerImpl extends RipManager {
         //analyzeButton.setEnabled(true);
         analyzeButton.setText("Analyze");
         progressBar.setValue(0);
+        etaLabel.setText(ETA_DEFAULT);
     }
 
     public void sourceButtonClicked() {
@@ -73,6 +84,9 @@ public class RipManagerImpl extends RipManager {
                             break;
                         case "output":
                             outputTextArea.setText((String) evt.getNewValue());
+                            break;
+                        case "eta":
+                            etaLabel.setText(evt.getNewValue() == null ? ETA_DEFAULT : "ETA: " + formatInterval((Long) evt.getNewValue()));
                             break;
                     }
                 }
