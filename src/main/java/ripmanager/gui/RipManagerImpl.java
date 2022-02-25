@@ -2,9 +2,7 @@ package ripmanager.gui;
 
 import lombok.extern.log4j.Log4j2;
 import ripmanager.common.ExceptionUtils;
-import ripmanager.engine.dto.Track;
-import ripmanager.engine.dto.TrackType;
-import ripmanager.engine.dto.WorkerCommand;
+import ripmanager.engine.dto.*;
 import ripmanager.worker.BackgroundWorker;
 import ripmanager.worker.WorkerOutcome;
 
@@ -66,9 +64,8 @@ public class RipManagerImpl extends RipManager {
                 super.getTreeCellRendererComponent(tree, value, sel, expanded, leaf, row, hasFocus);
                 DefaultMutableTreeNode node = (DefaultMutableTreeNode) value;
                 Object userObject = node.getUserObject();
-                if (Track.class.isAssignableFrom(node.getUserObject().getClass())) {
-                    this.setText(((Track) userObject).getLabel());
-                } else if (VIDEO_CATEGORY_LABEL.equals(node.getUserObject().toString())) {
+                // customizing categories
+                if (VIDEO_CATEGORY_LABEL.equals(node.getUserObject().toString())) {
                     this.setIcon(VIDEO_CATEGORY_ICON);
                 } else if (AUDIO_CATEGORY_LABEL.equals(node.getUserObject().toString())) {
                     this.setIcon(AUDIO_CATEGORY_ICON);
@@ -76,6 +73,19 @@ public class RipManagerImpl extends RipManager {
                     this.setIcon(SUBTITLES_CATEGORY_ICON);
                 } else if (CHAPTERS_CATEGORY_LABEL.equals(node.getUserObject().toString())) {
                     this.setIcon(CHAPTERS_CATEGORY_ICON);
+                }
+                // customizing tracks
+                if (Track.class.isAssignableFrom(node.getUserObject().getClass())) {
+                    this.setText(((Track) userObject).getLabel());
+                }
+                if (userObject instanceof VideoTrack) {
+                    this.setIcon(((VideoTrack) userObject).getDemuxOptions().isExtract() ? EXTRACT_YES_ICON : EXTRACT_NO_ICON);
+                } else if (userObject instanceof AudioTrack) {
+                    this.setIcon(((AudioTrack) userObject).getDemuxOptions().isExtract() ? EXTRACT_YES_ICON : EXTRACT_NO_ICON);
+                } else if (userObject instanceof SubtitlesTrack) {
+                    this.setIcon(((SubtitlesTrack) userObject).getDemuxOptions().isExtract() ? EXTRACT_YES_ICON : EXTRACT_NO_ICON);
+                } else if (userObject instanceof ChaptersTrack) {
+                    this.setIcon(((ChaptersTrack) userObject).getDemuxOptions().isExtract() ? EXTRACT_YES_ICON : EXTRACT_NO_ICON);
                 }
                 return this;
             }

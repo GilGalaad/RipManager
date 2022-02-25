@@ -5,10 +5,7 @@ import ripmanager.engine.dto.*;
 import ripmanager.engine.enums.AudioCodec;
 import ripmanager.engine.enums.Language;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -76,6 +73,7 @@ public class Eac3toParser {
                 ChaptersTrack track = new ChaptersTrack(index, line);
                 track.setProperties(new ChaptersProperties(false));
                 tracks.add(track);
+                track.setDemuxOptions(new DemuxOptions(true));
                 continue;
             }
 
@@ -95,6 +93,7 @@ public class Eac3toParser {
                 }
                 SubtitlesTrack track = new SubtitlesTrack(index, line);
                 track.setProperties(new SubtitlesProperties(lang));
+                track.setDemuxOptions(new DemuxOptions(DEFAULT_LANGUAGES.contains(lang)));
                 tracks.add(track);
                 continue;
             }
@@ -129,6 +128,18 @@ public class Eac3toParser {
             // unsupported track
             throw new RuntimeException("Unsupported track: " + line);
         }
+        tracks.sort(Comparator.comparing(Track::getIndex));
+
+        // applying default demux option for video and audio tracks
+        List<Track> videoTracks = tracks.stream().filter(i -> i.getType() == TrackType.VIDEO).collect(Collectors.toList());
+        for (int i = 0; i < videoTracks.size(); i++) {
+            if (i == 0) {
+                ((VideoTrack) videoTracks.get(i)).setDemuxOptions(new VideoDemuxOptions(true, true));
+            } else {
+                ((VideoTrack) videoTracks.get(i)).setDemuxOptions(new VideoDemuxOptions(false, false));
+            }
+        }
+        tracks.stream().filter(i -> i.getType() == TrackType.AUDIO).forEachOrdered(i -> ((AudioTrack) i).setDemuxOptions(new AudioDemuxOptions(false)));
 
         return tracks;
     }

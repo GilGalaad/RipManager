@@ -12,7 +12,6 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
@@ -65,10 +64,10 @@ public class BackgroundWorker extends SwingWorker<WorkerOutcome, Void> {
             if (mkvInfoOutcome.getStdout().contains("+ Chapters")) {
                 ChaptersTrack track = new ChaptersTrack(parsedTracks.stream().mapToInt(Track::getIndex).max().orElse(0) + 1, "Chapters");
                 track.setProperties(new ChaptersProperties(false));
+                track.setDemuxOptions(new DemuxOptions(true));
                 parsedTracks.add(track);
             }
 
-            parsedTracks.sort(Comparator.comparing(Track::getIndex));
             parsedTracks.forEach(log::info);
             return new WorkerOutcome(WorkerOutcome.Status.OK, output.toString(), parsedTracks);
         }
