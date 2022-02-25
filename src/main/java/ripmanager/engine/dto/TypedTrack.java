@@ -2,9 +2,11 @@ package ripmanager.engine.dto;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 
 @Data
 @NoArgsConstructor
+@ToString(callSuper = true)
 public class TypedTrack<T1, T2 extends DemuxOptions> extends Track {
 
     private T1 properties;

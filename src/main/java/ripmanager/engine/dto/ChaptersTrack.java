@@ -5,7 +5,7 @@ import lombok.ToString;
 
 @Data
 @ToString(callSuper = true)
-public class ChaptersTrack extends TypedTrack<Void, DemuxOptions> {
+public class ChaptersTrack extends TypedTrack<ChaptersProperties, DemuxOptions> {
 
     public ChaptersTrack(int index) {
         super(index, TrackType.CHAPTERS);

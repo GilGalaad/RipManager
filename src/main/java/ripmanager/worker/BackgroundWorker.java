@@ -4,8 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import ripmanager.common.CommonUtils;
 import ripmanager.engine.Eac3toParser;
-import ripmanager.engine.dto.Track;
-import ripmanager.engine.dto.WorkerCommand;
+import ripmanager.engine.dto.*;
 import ripmanager.gui.RipManagerImpl;
 
 import javax.swing.*;
@@ -13,6 +12,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
@@ -23,7 +23,7 @@ import static ripmanager.common.CommonUtils.calcEta;
 
 @Log4j2
 @RequiredArgsConstructor
-public class BackgroundWorker extends SwingWorker<ProcessOutcome, Void> {
+public class BackgroundWorker extends SwingWorker<WorkerOutcome, Void> {
 
     private static final Pattern EAC3TOPROGRESS_PATTERN = Pattern.compile("(analyze|process): (?<progress>\\d+)%");
 
@@ -34,20 +34,40 @@ public class BackgroundWorker extends SwingWorker<ProcessOutcome, Void> {
     private final RipManagerImpl frame;
 
     // local variables
-    private Integer exitCode;
-    private StringBuilder output;
+    private final StringBuilder output = new StringBuilder();
 
     @Override
-    protected ProcessOutcome doInBackground() throws Exception {
+    protected WorkerOutcome doInBackground() throws Exception {
         if (command == WorkerCommand.ANALYZE) {
+            // analyzing file with eac3to
             List<String> args = new ArrayList<>();
             args.add(source);
-            runEac3to(args);
-            if (exitCode != 0) {
-                return new ProcessOutcome(exitCode, output.toString());
+            ProcessOutcome eac3toOutcome = runEac3to(args);
+            if (eac3toOutcome.getExitCode() != 0) {
+                return new WorkerOutcome(WorkerOutcome.Status.KO, output.toString(), null);
             }
-            List<Track> tracks = Eac3toParser.parse(output.toString());
-            return new ProcessOutcome(exitCode, output.toString(), tracks);
+
+            // parsing output
+            List<Track> parsedTracks = Eac3toParser.parse(eac3toOutcome.getStdout());
+            if (parsedTracks.stream().anyMatch(i -> i.getType() == TrackType.CHAPTERS)) {
+                return new WorkerOutcome(WorkerOutcome.Status.OK, output.toString(), parsedTracks);
+            }
+
+            // looking for chapters with mkvextract
+            output.append(System.lineSeparator());
+            ProcessOutcome mkvInfoOutcome = runMkvInfo();
+            if (mkvInfoOutcome.getExitCode() != 0) {
+                return new WorkerOutcome(WorkerOutcome.Status.KO, output.toString(), null);
+            }
+            if (mkvInfoOutcome.getStdout().contains("+ Chapters")) {
+                ChaptersTrack track = new ChaptersTrack(parsedTracks.stream().mapToInt(Track::getIndex).max().orElse(0) + 1);
+                track.setProperties(new ChaptersProperties(false));
+                parsedTracks.add(track);
+            }
+
+            parsedTracks.sort(Comparator.comparing(Track::getIndex));
+            parsedTracks.forEach(log::info);
+            return new WorkerOutcome(WorkerOutcome.Status.OK, output.toString(), parsedTracks);
         }
         throw new UnsupportedOperationException();
     }
@@ -55,7 +75,7 @@ public class BackgroundWorker extends SwingWorker<ProcessOutcome, Void> {
     @Override
     protected void done() {
         try {
-            ProcessOutcome ret = get();
+            WorkerOutcome ret = get();
             frame.analyzeTaskCallback(ret);
         } catch (CancellationException | InterruptedException ex) {
             frame.endBackgroundTask();
@@ -64,15 +84,19 @@ public class BackgroundWorker extends SwingWorker<ProcessOutcome, Void> {
         }
     }
 
-    private void runEac3to(List<String> args) throws Exception {
+    private ProcessOutcome runEac3to(List<String> args) throws Exception {
         args.add(0, "python.exe");
         args.add(1, "c:\\dvd-rip\\python\\run_cmd.py");
         args.add(2, "eac3to.exe");
         //args.add("6:subs.sup");
         args.add("-log=NUL");
         args.add("-progressnumbers");
+
         log.info("Running: {}", String.join(" ", args));
-        output = new StringBuilder();
+        output.append("Running: ").append(String.join(" ", args)).append(System.lineSeparator());
+        firePropertyChange("output", null, output.toString());
+
+        StringBuilder stdout = new StringBuilder();
         ProcessBuilder pb = new ProcessBuilder(args.toArray(new String[0]));
         pb.directory(new File("d:\\iso"));
         pb.redirectErrorStream(true);
@@ -93,16 +117,59 @@ public class BackgroundWorker extends SwingWorker<ProcessOutcome, Void> {
                         setProgress(Math.min(progress, 100));
                     }
                 } else {
-                    output.append(CommonUtils.rtrim(line));
-                    output.append(System.lineSeparator());
+                    output.append(CommonUtils.rtrim(line)).append(System.lineSeparator());
+                    stdout.append(CommonUtils.rtrim(line)).append(System.lineSeparator());
                     firePropertyChange("output", null, output.toString());
                 }
                 firePropertyChange("eta", null, calcEta(startTime, getProgress()));
             }
         }
         p.waitFor();
+
         log.info("Process finished with exit code: {}", p.exitValue());
-        exitCode = p.exitValue();
+        output.append("Process finished with exit code: ").append(p.exitValue()).append(System.lineSeparator());
+        firePropertyChange("output", null, output.toString());
+
+        return new ProcessOutcome(p.exitValue(), stdout.toString());
+    }
+
+    private ProcessOutcome runMkvInfo() throws Exception {
+        List<String> args = new ArrayList<>();
+        args.add("python.exe");
+        args.add("c:\\dvd-rip\\python\\run_cmd.py");
+        args.add("mkvinfo.exe");
+        args.add(source);
+        args.add("--ui-language");
+        args.add("en");
+
+        log.info("Running: {}", String.join(" ", args));
+        output.append("Running: ").append(String.join(" ", args)).append(System.lineSeparator());
+        firePropertyChange("output", null, output.toString());
+
+        StringBuilder stdout = new StringBuilder();
+        ProcessBuilder pb = new ProcessBuilder(args.toArray(new String[0]));
+        pb.directory(new File("d:\\iso"));
+        pb.redirectErrorStream(true);
+        Process p = pb.start();
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                if (isCancelled()) {
+                    log.info("Cancelling execution and killing children processes");
+                    p.descendants().forEachOrdered(ProcessHandle::destroyForcibly);
+                    throw new RuntimeException();
+                }
+                // we don't capture output here
+                stdout.append(CommonUtils.rtrim(line)).append(System.lineSeparator());
+            }
+        }
+        p.waitFor();
+
+        log.info("Process finished with exit code: {}", p.exitValue());
+        output.append("Process finished with exit code: ").append(p.exitValue()).append(System.lineSeparator());
+        firePropertyChange("output", null, output.toString());
+
+        return new ProcessOutcome(p.exitValue(), stdout.toString());
     }
 
 }

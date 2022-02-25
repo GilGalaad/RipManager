@@ -5,7 +5,10 @@ import ripmanager.engine.dto.*;
 import ripmanager.engine.enums.AudioCodec;
 import ripmanager.engine.enums.Language;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -71,6 +74,7 @@ public class Eac3toParser {
             // chapters
             if (CHAPTERS_PATTERN.matcher(content).matches()) {
                 ChaptersTrack track = new ChaptersTrack(index);
+                track.setProperties(new ChaptersProperties(false));
                 tracks.add(track);
                 continue;
             }
@@ -120,8 +124,7 @@ public class Eac3toParser {
             // unsupported track
             throw new RuntimeException("Unsupported track: " + line);
         }
-        tracks.sort(Comparator.comparing(Track::getIndex));
-        tracks.forEach(log::info);
+
         return tracks;
     }
 

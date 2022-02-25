@@ -4,7 +4,7 @@ import lombok.extern.log4j.Log4j2;
 import ripmanager.common.ExceptionUtils;
 import ripmanager.engine.dto.WorkerCommand;
 import ripmanager.worker.BackgroundWorker;
-import ripmanager.worker.ProcessOutcome;
+import ripmanager.worker.WorkerOutcome;
 
 import javax.swing.*;
 import java.beans.PropertyChangeListener;
@@ -21,7 +21,7 @@ public class RipManagerImpl extends RipManager {
     public static final String ETA_DEFAULT = "ETA: 00:00:00";
 
     private boolean running = false;
-    private SwingWorker<ProcessOutcome, Void> worker;
+    private BackgroundWorker worker;
 
     public RipManagerImpl() {
         super();
@@ -91,6 +91,7 @@ public class RipManagerImpl extends RipManager {
     public void analyzeButtonClicked() {
         if (!running) {
             startBackgroundTask();
+            outputTextArea.setText(null);
             worker = new BackgroundWorker(WorkerCommand.ANALYZE, sourceTextField.getText(), null, this);
             worker.addPropertyChangeListener(generatePropertyChangeListener());
             worker.execute();
@@ -99,11 +100,11 @@ public class RipManagerImpl extends RipManager {
         }
     }
 
-    public void analyzeTaskCallback(ProcessOutcome outcome) {
+    public void analyzeTaskCallback(WorkerOutcome outcome) {
         endBackgroundTask();
         outputTextArea.setText(outcome.getOutput());
-        if (outcome.getExitCode() != 0) {
-            JOptionPane.showMessageDialog(this, String.format("Process finished with exit code: %s", outcome.getExitCode()), "Error", JOptionPane.ERROR_MESSAGE);
+        if (outcome.getStatus() != WorkerOutcome.Status.OK) {
+            JOptionPane.showMessageDialog(this, "Process finished with errors", "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
