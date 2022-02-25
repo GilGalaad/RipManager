@@ -3,12 +3,16 @@ package ripmanager.worker;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import ripmanager.common.CommonUtils;
+import ripmanager.engine.Eac3toParser;
+import ripmanager.engine.dto.Track;
+import ripmanager.engine.dto.WorkerCommand;
 import ripmanager.gui.RipManagerImpl;
 
 import javax.swing.*;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
@@ -19,23 +23,51 @@ import static ripmanager.common.CommonUtils.calcEta;
 
 @Log4j2
 @RequiredArgsConstructor
-public class Eac3toWorker extends SwingWorker<ProcessOutcome, Void> {
+public class BackgroundWorker extends SwingWorker<ProcessOutcome, Void> {
 
-    private enum RunMode {
-        ANALYZE,
-        PROCESS;
-    }
+    private static final Pattern EAC3TOPROGRESS_PATTERN = Pattern.compile("(analyze|process): (?<progress>\\d+)%");
 
-    private static final Pattern PROGRESS_PATTERN = Pattern.compile("(analyze|process): (?<progress>\\d+)%");
-
-    private final List<String> args;
+    // class init params
+    private final WorkerCommand command;
+    private final String source;
+    private final List<Track> tracks;
     private final RipManagerImpl frame;
 
-    private final StringBuilder output = new StringBuilder();
+    // local variables
+    private Integer exitCode;
+    private StringBuilder output;
 
     @Override
     protected ProcessOutcome doInBackground() throws Exception {
-        RunMode runMode = args.size() == 1 ? RunMode.ANALYZE : RunMode.PROCESS;
+        if (command == WorkerCommand.ANALYZE) {
+            List<String> args = new ArrayList<>();
+            args.add(source);
+            runEac3to(args);
+            if (isCancelled()) {
+                return null;
+            }
+            if (exitCode != 0) {
+                return new ProcessOutcome(exitCode, output.toString());
+            }
+            List<Track> tracks = Eac3toParser.parse(output.toString());
+            return new ProcessOutcome(exitCode, output.toString(), tracks);
+        }
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    protected void done() {
+        try {
+            ProcessOutcome ret = get();
+            frame.analyzeTaskCallback(ret);
+        } catch (CancellationException | InterruptedException ex) {
+            frame.endBackgroundTask();
+        } catch (ExecutionException ex) {
+            frame.analyzeTaskCallback(ex);
+        }
+    }
+
+    private void runEac3to(List<String> args) throws Exception {
         args.add(0, "python.exe");
         args.add(1, "c:\\dvd-rip\\python\\run_cmd.py");
         args.add(2, "eac3to.exe");
@@ -43,6 +75,7 @@ public class Eac3toWorker extends SwingWorker<ProcessOutcome, Void> {
         args.add("-log=NUL");
         args.add("-progressnumbers");
         log.info("Running: {}", String.join(" ", args));
+        output = new StringBuilder();
         ProcessBuilder pb = new ProcessBuilder(args.toArray(new String[0]));
         pb.directory(new File("d:\\iso"));
         pb.redirectErrorStream(true);
@@ -53,12 +86,11 @@ public class Eac3toWorker extends SwingWorker<ProcessOutcome, Void> {
             while ((line = reader.readLine()) != null) {
                 if (isCancelled()) {
                     p.descendants().forEachOrdered(ProcessHandle::destroyForcibly);
-                    return null;
+                    return;
                 }
-                Matcher m = PROGRESS_PATTERN.matcher(line);
+                Matcher m = EAC3TOPROGRESS_PATTERN.matcher(line);
                 if (m.matches()) {
-                    log.info(line);
-                    if (runMode == RunMode.ANALYZE || line.contains("process")) {
+                    if (command == WorkerCommand.ANALYZE || line.contains("process")) {
                         int progress = Integer.parseInt(m.group("progress"));
                         setProgress(Math.min(progress, 100));
                     }
@@ -72,19 +104,7 @@ public class Eac3toWorker extends SwingWorker<ProcessOutcome, Void> {
         }
         p.waitFor();
         log.info("Process finished with exit code: {}", p.exitValue());
-        return new ProcessOutcome(p.exitValue(), output.toString());
-    }
-
-    @Override
-    protected void done() {
-        try {
-            ProcessOutcome ret = get();
-            frame.analyzeTaskCallback(ret);
-        } catch (CancellationException | InterruptedException ex) {
-            frame.endBackgroundTask();
-        } catch (ExecutionException ex) {
-            frame.analyzeTaskCallback(ex);
-        }
+        exitCode = p.exitValue();
     }
 
 }

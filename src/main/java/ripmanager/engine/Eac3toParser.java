@@ -25,7 +25,7 @@ public class Eac3toParser {
     // defaults
     private static final Set<Language> DEFAULT_LANGUAGES = Stream.of(Language.ENGLISH, Language.ITALIAN).collect(Collectors.toCollection(HashSet::new));
 
-    public static void parse(String output) {
+    public static List<Track> parse(String output) {
         // skipping and aggregating lines
         List<String> lines = new ArrayList<>();
         for (var line : LINE_SPLIT_PATTERN.splitAsStream(output).collect(Collectors.toList())) {
@@ -122,6 +122,7 @@ public class Eac3toParser {
         }
         tracks.sort(Comparator.comparing(Track::getIndex));
         tracks.forEach(log::info);
+        return tracks;
     }
 
 }

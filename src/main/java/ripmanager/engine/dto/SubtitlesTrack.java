@@ -5,7 +5,7 @@ import lombok.ToString;
 
 @Data
 @ToString(callSuper = true)
-public class SubtitlesTrack extends Track<SubtitlesProperties, DemuxOptions> {
+public class SubtitlesTrack extends TypedTrack<SubtitlesProperties, DemuxOptions> {
 
     public SubtitlesTrack(int index) {
         super(index, TrackType.SUBTITLES);
