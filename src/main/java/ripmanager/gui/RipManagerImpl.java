@@ -29,6 +29,12 @@ public class RipManagerImpl extends RipManager {
     private static final String AUDIO_CATEGORY_LABEL = "Audio streams";
     private static final String SUBTITLES_CATEGORY_LABEL = "Subtitles";
     private static final String CHAPTERS_CATEGORY_LABEL = "Chapters";
+    private static final Icon VIDEO_CATEGORY_ICON = new ImageIcon(RipManagerImpl.class.getResource("/icons/video.png"));
+    private static final Icon AUDIO_CATEGORY_ICON = new ImageIcon(RipManagerImpl.class.getResource("/icons/audio.png"));
+    private static final Icon SUBTITLES_CATEGORY_ICON = new ImageIcon(RipManagerImpl.class.getResource("/icons/subtitles.png"));
+    private static final Icon CHAPTERS_CATEGORY_ICON = new ImageIcon(RipManagerImpl.class.getResource("/icons/chapters.png"));
+    private static final Icon EXTRACT_YES_ICON = new ImageIcon(RipManagerImpl.class.getResource("/icons/yes.png"));
+    private static final Icon EXTRACT_NO_ICON = new ImageIcon(RipManagerImpl.class.getResource("/icons/no.png"));
     public static final String ETA_DEFAULT = "ETA: 00:00:00";
 
     private boolean running = false;
@@ -42,6 +48,7 @@ public class RipManagerImpl extends RipManager {
 
         trackTree.setModel(null);
         trackTree.setRootVisible(false);
+        trackTree.setRowHeight(18);
         trackTree.addTreeWillExpandListener(new TreeWillExpandListener() {
             @Override
             public void treeWillExpand(TreeExpansionEvent event) {
@@ -56,11 +63,19 @@ public class RipManagerImpl extends RipManager {
         trackTree.setCellRenderer(new DefaultTreeCellRenderer() {
             @Override
             public Component getTreeCellRendererComponent(JTree tree, Object value, boolean sel, boolean expanded, boolean leaf, int row, boolean hasFocus) {
-                Component component = super.getTreeCellRendererComponent(tree, value, sel, expanded, leaf, row, hasFocus);
+                super.getTreeCellRendererComponent(tree, value, sel, expanded, leaf, row, hasFocus);
                 DefaultMutableTreeNode node = (DefaultMutableTreeNode) value;
                 Object userObject = node.getUserObject();
                 if (Track.class.isAssignableFrom(node.getUserObject().getClass())) {
                     this.setText(((Track) userObject).getLabel());
+                } else if (VIDEO_CATEGORY_LABEL.equals(node.getUserObject().toString())) {
+                    this.setIcon(VIDEO_CATEGORY_ICON);
+                } else if (AUDIO_CATEGORY_LABEL.equals(node.getUserObject().toString())) {
+                    this.setIcon(AUDIO_CATEGORY_ICON);
+                } else if (SUBTITLES_CATEGORY_LABEL.equals(node.getUserObject().toString())) {
+                    this.setIcon(SUBTITLES_CATEGORY_ICON);
+                } else if (CHAPTERS_CATEGORY_LABEL.equals(node.getUserObject().toString())) {
+                    this.setIcon(CHAPTERS_CATEGORY_ICON);
                 }
                 return this;
             }
