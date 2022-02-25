@@ -7,8 +7,8 @@ import lombok.ToString;
 @ToString(callSuper = true)
 public class AudioTrack extends TypedTrack<AudioProperties, AudioDemuxOptions> {
 
-    public AudioTrack(int index) {
-        super(index, TrackType.AUDIO);
+    public AudioTrack(int index, String label) {
+        super(index, TrackType.AUDIO, label);
     }
 
 }

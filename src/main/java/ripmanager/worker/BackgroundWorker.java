@@ -49,6 +49,9 @@ public class BackgroundWorker extends SwingWorker<WorkerOutcome, Void> {
 
             // parsing output
             List<Track> parsedTracks = Eac3toParser.parse(eac3toOutcome.getStdout());
+            if (parsedTracks.isEmpty()) {
+                return new WorkerOutcome(WorkerOutcome.Status.KO, output.toString(), parsedTracks);
+            }
             if (parsedTracks.stream().anyMatch(i -> i.getType() == TrackType.CHAPTERS)) {
                 return new WorkerOutcome(WorkerOutcome.Status.OK, output.toString(), parsedTracks);
             }
@@ -60,7 +63,7 @@ public class BackgroundWorker extends SwingWorker<WorkerOutcome, Void> {
                 return new WorkerOutcome(WorkerOutcome.Status.KO, output.toString(), null);
             }
             if (mkvInfoOutcome.getStdout().contains("+ Chapters")) {
-                ChaptersTrack track = new ChaptersTrack(parsedTracks.stream().mapToInt(Track::getIndex).max().orElse(0) + 1);
+                ChaptersTrack track = new ChaptersTrack(parsedTracks.stream().mapToInt(Track::getIndex).max().orElse(0) + 1, "Chapters");
                 track.setProperties(new ChaptersProperties(false));
                 parsedTracks.add(track);
             }

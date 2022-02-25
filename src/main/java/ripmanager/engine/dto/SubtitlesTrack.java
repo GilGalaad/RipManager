@@ -7,8 +7,8 @@ import lombok.ToString;
 @ToString(callSuper = true)
 public class SubtitlesTrack extends TypedTrack<SubtitlesProperties, DemuxOptions> {
 
-    public SubtitlesTrack(int index) {
-        super(index, TrackType.SUBTITLES);
+    public SubtitlesTrack(int index, String label) {
+        super(index, TrackType.SUBTITLES, label);
     }
 
 }

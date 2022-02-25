@@ -66,14 +66,14 @@ public class Eac3toParser {
                     log.info("Skipping line: {}", line);
                     continue;
                 }
-                VideoTrack track = new VideoTrack(index);
+                VideoTrack track = new VideoTrack(index, line);
                 tracks.add(track);
                 continue;
             }
 
             // chapters
             if (CHAPTERS_PATTERN.matcher(content).matches()) {
-                ChaptersTrack track = new ChaptersTrack(index);
+                ChaptersTrack track = new ChaptersTrack(index, line);
                 track.setProperties(new ChaptersProperties(false));
                 tracks.add(track);
                 continue;
@@ -93,7 +93,7 @@ public class Eac3toParser {
                     log.info("Skipping line for unsupported subtitle type: {}", line);
                     continue;
                 }
-                SubtitlesTrack track = new SubtitlesTrack(index);
+                SubtitlesTrack track = new SubtitlesTrack(index, line);
                 track.setProperties(new SubtitlesProperties(lang));
                 tracks.add(track);
                 continue;
@@ -114,7 +114,12 @@ public class Eac3toParser {
                 }
                 int channels = Integer.parseInt(audm.group("channels").split("\\.")[0]) + Integer.parseInt(audm.group("channels").split("\\.")[1]);
                 boolean hasCore = content.contains("(core:") || content.contains("(embedded:");
-                AudioTrack track = new AudioTrack(index);
+                String[] split = line.split(",");
+                String label = split[0].trim() + ", " + split[1].trim() + ", " + audm.group("channels") + " channels";
+                if (split[3].contains("kbps")) {
+                    label += ", " + split[3].trim();
+                }
+                AudioTrack track = new AudioTrack(index, label);
                 AudioProperties properties = new AudioProperties(lang, codec, channels, hasCore);
                 track.setProperties(properties);
                 tracks.add(track);

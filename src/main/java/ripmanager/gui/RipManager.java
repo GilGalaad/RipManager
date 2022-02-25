@@ -17,6 +17,8 @@ public class RipManager extends javax.swing.JFrame {
         outputTextArea = new javax.swing.JTextArea();
         progressBar = new javax.swing.JProgressBar();
         etaLabel = new javax.swing.JLabel();
+        treeScrollPane = new javax.swing.JScrollPane();
+        trackTree = new javax.swing.JTree();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setTitle("RipManager");
@@ -35,6 +37,8 @@ public class RipManager extends javax.swing.JFrame {
 
         etaLabel.setHorizontalAlignment(javax.swing.SwingConstants.RIGHT);
 
+        treeScrollPane.setViewportView(trackTree);
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
@@ -43,16 +47,19 @@ public class RipManager extends javax.swing.JFrame {
                                 .addContainerGap()
                                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                                         .addGroup(layout.createSequentialGroup()
-                                                .addComponent(sourceTextField, javax.swing.GroupLayout.DEFAULT_SIZE, 730, Short.MAX_VALUE)
+                                                .addComponent(sourceTextField, javax.swing.GroupLayout.DEFAULT_SIZE, 930, Short.MAX_VALUE)
                                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                                                 .addComponent(sourceButton))
                                         .addComponent(analyzeButton, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                                         .addGroup(layout.createSequentialGroup()
                                                 .addComponent(progressBar, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                                .addComponent(etaLabel, javax.swing.GroupLayout.PREFERRED_SIZE, 80, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                                                .addComponent(etaLabel, javax.swing.GroupLayout.PREFERRED_SIZE, 80, javax.swing.GroupLayout.PREFERRED_SIZE))
+                                        .addGroup(layout.createSequentialGroup()
+                                                .addComponent(treeScrollPane, javax.swing.GroupLayout.PREFERRED_SIZE, 653, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                                .addGap(0, 0, Short.MAX_VALUE)))
                                 .addGap(18, 18, 18)
-                                .addComponent(outputScrollPane, javax.swing.GroupLayout.DEFAULT_SIZE, 781, Short.MAX_VALUE)
+                                .addComponent(outputScrollPane, javax.swing.GroupLayout.DEFAULT_SIZE, 981, Short.MAX_VALUE)
                                 .addContainerGap())
         );
         layout.setVerticalGroup(
@@ -66,11 +73,13 @@ public class RipManager extends javax.swing.JFrame {
                                                         .addComponent(sourceButton))
                                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                                                 .addComponent(analyzeButton)
-                                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                                .addGap(18, 18, 18)
+                                                .addComponent(treeScrollPane)
+                                                .addGap(18, 18, 18)
                                                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                                                         .addComponent(progressBar, javax.swing.GroupLayout.PREFERRED_SIZE, 25, javax.swing.GroupLayout.PREFERRED_SIZE)
                                                         .addComponent(etaLabel)))
-                                        .addComponent(outputScrollPane, javax.swing.GroupLayout.DEFAULT_SIZE, 778, Short.MAX_VALUE))
+                                        .addComponent(outputScrollPane, javax.swing.GroupLayout.DEFAULT_SIZE, 978, Short.MAX_VALUE))
                                 .addContainerGap())
         );
 
@@ -85,5 +94,7 @@ public class RipManager extends javax.swing.JFrame {
     protected javax.swing.JProgressBar progressBar;
     protected javax.swing.JButton sourceButton;
     protected javax.swing.JTextField sourceTextField;
+    protected javax.swing.JTree trackTree;
+    private javax.swing.JScrollPane treeScrollPane;
     // End of variables declaration//GEN-END:variables
 }

@@ -7,8 +7,8 @@ import lombok.ToString;
 @ToString(callSuper = true)
 public class VideoTrack extends TypedTrack<Void, VideoDemuxOptions> {
 
-    public VideoTrack(int index) {
-        super(index, TrackType.VIDEO);
+    public VideoTrack(int index, String label) {
+        super(index, TrackType.VIDEO, label);
     }
 
 }

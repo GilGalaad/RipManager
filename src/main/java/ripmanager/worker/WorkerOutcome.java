@@ -15,6 +15,6 @@ public class WorkerOutcome {
 
     private final Status status;
     private final String output;
-    private final List<Track> tasks;
+    private final List<Track> tracks;
 
 }

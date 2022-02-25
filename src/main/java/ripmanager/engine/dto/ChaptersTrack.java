@@ -7,8 +7,8 @@ import lombok.ToString;
 @ToString(callSuper = true)
 public class ChaptersTrack extends TypedTrack<ChaptersProperties, DemuxOptions> {
 
-    public ChaptersTrack(int index) {
-        super(index, TrackType.CHAPTERS);
+    public ChaptersTrack(int index, String label) {
+        super(index, TrackType.CHAPTERS, label);
     }
 
 }

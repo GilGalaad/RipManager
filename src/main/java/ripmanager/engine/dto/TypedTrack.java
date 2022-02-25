@@ -12,8 +12,7 @@ public class TypedTrack<T1, T2 extends DemuxOptions> extends Track {
     private T1 properties;
     private T2 demuxOptions;
 
-    public TypedTrack(int index, TrackType type) {
-        super(index, type);
+    public TypedTrack(int index, TrackType type, String label) {
+        super(index, type, label);
     }
-
 }
