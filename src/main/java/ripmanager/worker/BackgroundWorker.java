@@ -43,9 +43,6 @@ public class BackgroundWorker extends SwingWorker<ProcessOutcome, Void> {
             List<String> args = new ArrayList<>();
             args.add(source);
             runEac3to(args);
-            if (isCancelled()) {
-                return null;
-            }
             if (exitCode != 0) {
                 return new ProcessOutcome(exitCode, output.toString());
             }
@@ -85,8 +82,9 @@ public class BackgroundWorker extends SwingWorker<ProcessOutcome, Void> {
             String line;
             while ((line = reader.readLine()) != null) {
                 if (isCancelled()) {
+                    log.info("Cancelling execution and killing children processes");
                     p.descendants().forEachOrdered(ProcessHandle::destroyForcibly);
-                    return;
+                    throw new RuntimeException();
                 }
                 Matcher m = EAC3TOPROGRESS_PATTERN.matcher(line);
                 if (m.matches()) {

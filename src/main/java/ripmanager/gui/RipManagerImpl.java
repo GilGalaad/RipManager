@@ -7,6 +7,7 @@ import ripmanager.worker.BackgroundWorker;
 import ripmanager.worker.ProcessOutcome;
 
 import javax.swing.*;
+import java.beans.PropertyChangeListener;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -52,6 +53,24 @@ public class RipManagerImpl extends RipManager {
         etaLabel.setText(ETA_DEFAULT);
     }
 
+    private PropertyChangeListener generatePropertyChangeListener() {
+        return evt -> {
+            if (!worker.isDone()) {
+                switch (evt.getPropertyName()) {
+                    case "progress":
+                        progressBar.setValue((Integer) evt.getNewValue());
+                        break;
+                    case "output":
+                        outputTextArea.setText((String) evt.getNewValue());
+                        break;
+                    case "eta":
+                        etaLabel.setText(evt.getNewValue() == null ? ETA_DEFAULT : "ETA: " + formatInterval((Long) evt.getNewValue()));
+                        break;
+                }
+            }
+        };
+    }
+
     public void sourceButtonClicked() {
         UIManager.put("FileChooser.readOnly", Boolean.TRUE);
         JFileChooser fc;
@@ -73,21 +92,7 @@ public class RipManagerImpl extends RipManager {
         if (!running) {
             startBackgroundTask();
             worker = new BackgroundWorker(WorkerCommand.ANALYZE, sourceTextField.getText(), null, this);
-            worker.addPropertyChangeListener(evt -> {
-                if (!worker.isDone()) {
-                    switch (evt.getPropertyName()) {
-                        case "progress":
-                            progressBar.setValue((Integer) evt.getNewValue());
-                            break;
-                        case "output":
-                            outputTextArea.setText((String) evt.getNewValue());
-                            break;
-                        case "eta":
-                            etaLabel.setText(evt.getNewValue() == null ? ETA_DEFAULT : "ETA: " + formatInterval((Long) evt.getNewValue()));
-                            break;
-                    }
-                }
-            });
+            worker.addPropertyChangeListener(generatePropertyChangeListener());
             worker.execute();
         } else {
             worker.cancel(true);
