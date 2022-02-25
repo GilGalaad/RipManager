@@ -2,6 +2,7 @@ package ripmanager.gui;
 
 import lombok.extern.log4j.Log4j2;
 import ripmanager.common.ExceptionUtils;
+import ripmanager.engine.Eac3toParser;
 import ripmanager.worker.Eac3toWorker;
 import ripmanager.worker.ProcessOutcome;
 
@@ -102,7 +103,9 @@ public class RipManagerImpl extends RipManager {
         outputTextArea.setText(outcome.getOutput());
         if (outcome.getExitCode() != null && outcome.getExitCode() != 0) {
             JOptionPane.showMessageDialog(this, String.format("Process finished with exit code: %s", outcome.getExitCode()), "Error", JOptionPane.ERROR_MESSAGE);
+            return;
         }
+        Eac3toParser.parse(outcome.getOutput());
     }
 
     public void analyzeTaskCallback(Exception ex) {

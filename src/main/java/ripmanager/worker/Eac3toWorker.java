@@ -21,8 +21,12 @@ import static ripmanager.common.CommonUtils.calcEta;
 @RequiredArgsConstructor
 public class Eac3toWorker extends SwingWorker<ProcessOutcome, Void> {
 
-    private static final String PROGRESS_REGEX = "(analyze|process): (?<progress>\\d+)%";
-    private static final Pattern PROGRESS_PATTERN = Pattern.compile(PROGRESS_REGEX);
+    private enum RunMode {
+        ANALYZE,
+        PROCESS;
+    }
+
+    private static final Pattern PROGRESS_PATTERN = Pattern.compile("(analyze|process): (?<progress>\\d+)%");
 
     private final List<String> args;
     private final RipManagerImpl frame;
@@ -31,9 +35,11 @@ public class Eac3toWorker extends SwingWorker<ProcessOutcome, Void> {
 
     @Override
     protected ProcessOutcome doInBackground() throws Exception {
+        RunMode runMode = args.size() == 1 ? RunMode.ANALYZE : RunMode.PROCESS;
         args.add(0, "python.exe");
         args.add(1, "c:\\dvd-rip\\python\\run_cmd.py");
         args.add(2, "eac3to.exe");
+        //args.add("6:subs.sup");
         args.add("-log=NUL");
         args.add("-progressnumbers");
         log.info("Running: {}", String.join(" ", args));
@@ -51,8 +57,11 @@ public class Eac3toWorker extends SwingWorker<ProcessOutcome, Void> {
                 }
                 Matcher m = PROGRESS_PATTERN.matcher(line);
                 if (m.matches()) {
-                    int progress = Integer.parseInt(m.group("progress"));
-                    setProgress(Math.min(progress, 100));
+                    log.info(line);
+                    if (runMode == RunMode.ANALYZE || line.contains("process")) {
+                        int progress = Integer.parseInt(m.group("progress"));
+                        setProgress(Math.min(progress, 100));
+                    }
                 } else {
                     output.append(CommonUtils.rtrim(line));
                     output.append(System.lineSeparator());
