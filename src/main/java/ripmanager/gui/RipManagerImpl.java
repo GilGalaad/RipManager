@@ -12,6 +12,8 @@ import javax.swing.event.TreeSelectionEvent;
 import javax.swing.event.TreeWillExpandListener;
 import javax.swing.tree.*;
 import java.awt.*;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.beans.PropertyChangeEvent;
 import java.io.File;
 import java.nio.file.Files;
@@ -49,30 +51,33 @@ public class RipManagerImpl extends RipManager {
         analyzeButton.addActionListener(evt -> analyzeButtonClicked());
 
         trackTree.setModel(null);
+        trackTree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
         trackTree.setRootVisible(false);
         trackTree.setRowHeight(18);
         trackTree.addTreeWillExpandListener(createCustomTreeWillExpandListener());
         trackTree.setCellRenderer(createCustomCellRenderer());
+        trackTree.addMouseListener(createCustomMouseListener());
         trackTree.addTreeSelectionListener(this::nodeSelected);
     }
 
     public void startBackgroundTask() {
         running = true;
         sourceButton.setEnabled(false);
-        //analyzeButton.setEnabled(false);
         analyzeButton.setText("Abort");
         progressBar.setValue(0);
         etaLabel.setText(ETA_DEFAULT);
         trackTree.setModel(null);
+        clearAllDemuxOptions();
+        disableAllDemuxOptions();
     }
 
     public void endBackgroundTask() {
         running = false;
         sourceButton.setEnabled(true);
-        //analyzeButton.setEnabled(true);
         analyzeButton.setText("Analyze");
         progressBar.setValue(0);
         etaLabel.setText(ETA_DEFAULT);
+        configureDemuxOptionsBySelectedNode();
     }
 
     private void sourceButtonClicked() {
@@ -143,7 +148,6 @@ public class RipManagerImpl extends RipManager {
             tracks.stream().filter(i -> i.getType() == TrackType.CHAPTERS).forEachOrdered(i -> chaptersCategory.add(new DefaultMutableTreeNode(i, false)));
         }
         trackTree.setModel(new DefaultTreeModel(rootNode, true));
-        trackTree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
         // expand all
         for (int i = 0; i < trackTree.getRowCount(); i++) {
             trackTree.expandRow(i);
@@ -216,33 +220,94 @@ public class RipManagerImpl extends RipManager {
         };
     }
 
+    // clear selection if we click outside any row
+    private MouseListener createCustomMouseListener() {
+        return new MouseListener() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if (trackTree.getRowForLocation(e.getX(), e.getY()) == -1) {
+                    trackTree.clearSelection();
+                    clearAllDemuxOptions();
+                    disableAllDemuxOptions();
+                }
+            }
+
+            @Override
+            public void mousePressed(MouseEvent e) {
+            }
+
+            @Override
+            public void mouseReleased(MouseEvent e) {
+            }
+
+            @Override
+            public void mouseEntered(MouseEvent e) {
+            }
+
+            @Override
+            public void mouseExited(MouseEvent e) {
+            }
+        };
+    }
+
     private void nodeSelected(TreeSelectionEvent evt) {
-        DefaultMutableTreeNode node = (DefaultMutableTreeNode) trackTree.getLastSelectedPathComponent();
-        if (node == null) {
+        // if no node selected, nothing to do
+        if (trackTree.getModel() == null || trackTree.getLastSelectedPathComponent() == null) {
             return;
         }
+        DefaultMutableTreeNode node = (DefaultMutableTreeNode) trackTree.getLastSelectedPathComponent();
         // prevent selection of categories
         if (!node.isLeaf()) {
             trackTree.setSelectionPath(evt.getOldLeadSelectionPath());
             return;
         }
+        configureDemuxOptionsBySelectedNode();
+    }
+
+    // when starting analyze
+    private void clearAllDemuxOptions() {
+        selectedCheckBox.setSelected(false);
+        convertToHuffCheckBox.setSelected(false);
+    }
+
+    // when starting worker
+    private void disableAllDemuxOptions() {
+        selectedCheckBox.setEnabled(false);
+        convertToHuffCheckBox.setEnabled(false);
+    }
+
+    // when worker ends
+    private void configureDemuxOptionsBySelectedNode() {
+        // if no node selected, nothing to do
+        if (trackTree.getModel() == null || trackTree.getLastSelectedPathComponent() == null) {
+            return;
+        }
+        DefaultMutableTreeNode node = (DefaultMutableTreeNode) trackTree.getLastSelectedPathComponent();
         Object userObject = node.getUserObject();
         if (userObject instanceof VideoTrack) {
             VideoTrack track = (VideoTrack) userObject;
             selectedCheckBox.setEnabled(true);
             selectedCheckBox.setSelected(track.getDemuxOptions().isSelected());
+            convertToHuffCheckBox.setEnabled(true);
+            convertToHuffCheckBox.setSelected(track.getDemuxOptions().isConvertToHuff());
         } else if (userObject instanceof AudioTrack) {
             AudioTrack track = (AudioTrack) userObject;
             selectedCheckBox.setEnabled(true);
             selectedCheckBox.setSelected(track.getDemuxOptions().isSelected());
+            convertToHuffCheckBox.setEnabled(false);
+            convertToHuffCheckBox.setSelected(false);
         } else if (userObject instanceof SubtitlesTrack) {
             SubtitlesTrack track = (SubtitlesTrack) userObject;
             selectedCheckBox.setEnabled(true);
             selectedCheckBox.setSelected(track.getDemuxOptions().isSelected());
+            convertToHuffCheckBox.setEnabled(false);
+            convertToHuffCheckBox.setSelected(false);
         } else if (userObject instanceof ChaptersTrack) {
             ChaptersTrack track = (ChaptersTrack) userObject;
             selectedCheckBox.setEnabled(true);
             selectedCheckBox.setSelected(track.getDemuxOptions().isSelected());
+            convertToHuffCheckBox.setEnabled(false);
+            convertToHuffCheckBox.setSelected(false);
         }
     }
 

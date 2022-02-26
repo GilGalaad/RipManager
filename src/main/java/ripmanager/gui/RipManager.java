@@ -19,7 +19,10 @@ public class RipManager extends javax.swing.JFrame {
         etaLabel = new javax.swing.JLabel();
         treeScrollPane = new javax.swing.JScrollPane();
         trackTree = new javax.swing.JTree();
+        demuxOptionsPanel = new javax.swing.JPanel();
         selectedCheckBox = new javax.swing.JCheckBox();
+        jPanel1 = new javax.swing.JPanel();
+        convertToHuffCheckBox = new javax.swing.JCheckBox();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setTitle("RipManager");
@@ -41,9 +44,49 @@ public class RipManager extends javax.swing.JFrame {
 
         treeScrollPane.setViewportView(trackTree);
 
+        demuxOptionsPanel.setBorder(javax.swing.BorderFactory.createTitledBorder("General demux options"));
+
         selectedCheckBox.setText("Select track");
         selectedCheckBox.setEnabled(false);
-        selectedCheckBox.setHorizontalTextPosition(javax.swing.SwingConstants.LEADING);
+
+        javax.swing.GroupLayout demuxOptionsPanelLayout = new javax.swing.GroupLayout(demuxOptionsPanel);
+        demuxOptionsPanel.setLayout(demuxOptionsPanelLayout);
+        demuxOptionsPanelLayout.setHorizontalGroup(
+                demuxOptionsPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                        .addGroup(demuxOptionsPanelLayout.createSequentialGroup()
+                                .addContainerGap()
+                                .addComponent(selectedCheckBox)
+                                .addContainerGap(151, Short.MAX_VALUE))
+        );
+        demuxOptionsPanelLayout.setVerticalGroup(
+                demuxOptionsPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                        .addGroup(demuxOptionsPanelLayout.createSequentialGroup()
+                                .addContainerGap()
+                                .addComponent(selectedCheckBox)
+                                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+        );
+
+        jPanel1.setBorder(javax.swing.BorderFactory.createTitledBorder("Video demux options"));
+
+        convertToHuffCheckBox.setText("Convert to FFMpeg HuffYUV");
+        convertToHuffCheckBox.setEnabled(false);
+
+        javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
+        jPanel1.setLayout(jPanel1Layout);
+        jPanel1Layout.setHorizontalGroup(
+                jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                        .addGroup(jPanel1Layout.createSequentialGroup()
+                                .addContainerGap()
+                                .addComponent(convertToHuffCheckBox)
+                                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+        );
+        jPanel1Layout.setVerticalGroup(
+                jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                        .addGroup(jPanel1Layout.createSequentialGroup()
+                                .addContainerGap()
+                                .addComponent(convertToHuffCheckBox)
+                                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+        );
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
@@ -64,7 +107,9 @@ public class RipManager extends javax.swing.JFrame {
                                         .addGroup(layout.createSequentialGroup()
                                                 .addComponent(treeScrollPane)
                                                 .addGap(18, 18, 18)
-                                                .addComponent(selectedCheckBox)))
+                                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                                                        .addComponent(demuxOptionsPanel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                                        .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))))
                                 .addGap(18, 18, 18)
                                 .addComponent(outputScrollPane, javax.swing.GroupLayout.DEFAULT_SIZE, 981, Short.MAX_VALUE)
                                 .addContainerGap())
@@ -84,7 +129,9 @@ public class RipManager extends javax.swing.JFrame {
                                                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                                                         .addComponent(treeScrollPane)
                                                         .addGroup(layout.createSequentialGroup()
-                                                                .addComponent(selectedCheckBox)
+                                                                .addComponent(demuxOptionsPanel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                                                .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                                                                 .addGap(0, 0, Short.MAX_VALUE)))
                                                 .addGap(18, 18, 18)
                                                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
@@ -99,7 +146,10 @@ public class RipManager extends javax.swing.JFrame {
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     protected javax.swing.JButton analyzeButton;
+    protected javax.swing.JCheckBox convertToHuffCheckBox;
+    private javax.swing.JPanel demuxOptionsPanel;
     protected javax.swing.JLabel etaLabel;
+    private javax.swing.JPanel jPanel1;
     protected javax.swing.JScrollPane outputScrollPane;
     protected javax.swing.JTextArea outputTextArea;
     protected javax.swing.JProgressBar progressBar;
