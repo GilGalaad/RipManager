@@ -11,8 +11,8 @@ public class VideoDemuxOptions extends DemuxOptions {
 
     private boolean convertToHuff;
 
-    public VideoDemuxOptions(boolean extract, boolean convertToHuff) {
-        super(extract);
+    public VideoDemuxOptions(boolean selected, boolean convertToHuff) {
+        super(selected);
         this.convertToHuff = convertToHuff;
     }
 

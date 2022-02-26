@@ -9,8 +9,8 @@ import lombok.ToString;
 @ToString(callSuper = true)
 public class AudioDemuxOptions extends DemuxOptions {
 
-    public AudioDemuxOptions(boolean extract) {
-        super(extract);
+    public AudioDemuxOptions(boolean selected) {
+        super(selected);
     }
 
 }

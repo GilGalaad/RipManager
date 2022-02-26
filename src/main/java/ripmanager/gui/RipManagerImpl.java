@@ -8,6 +8,7 @@ import ripmanager.worker.WorkerOutcome;
 
 import javax.swing.*;
 import javax.swing.event.TreeExpansionEvent;
+import javax.swing.event.TreeSelectionListener;
 import javax.swing.event.TreeWillExpandListener;
 import javax.swing.tree.*;
 import java.awt.*;
@@ -31,8 +32,8 @@ public class RipManagerImpl extends RipManager {
     private static final Icon AUDIO_CATEGORY_ICON = new ImageIcon(RipManagerImpl.class.getResource("/icons/audio.png"));
     private static final Icon SUBTITLES_CATEGORY_ICON = new ImageIcon(RipManagerImpl.class.getResource("/icons/subtitles.png"));
     private static final Icon CHAPTERS_CATEGORY_ICON = new ImageIcon(RipManagerImpl.class.getResource("/icons/chapters.png"));
-    private static final Icon EXTRACT_YES_ICON = new ImageIcon(RipManagerImpl.class.getResource("/icons/yes.png"));
-    private static final Icon EXTRACT_NO_ICON = new ImageIcon(RipManagerImpl.class.getResource("/icons/no.png"));
+    private static final Icon SELECTED_YES_ICON = new ImageIcon(RipManagerImpl.class.getResource("/icons/yes.png"));
+    private static final Icon SELECTED_NO_ICON = new ImageIcon(RipManagerImpl.class.getResource("/icons/no.png"));
     public static final String ETA_DEFAULT = "ETA: 00:00:00";
 
     private boolean running = false;
@@ -40,61 +41,19 @@ public class RipManagerImpl extends RipManager {
 
     public RipManagerImpl() {
         super();
-        initComponents();
-        sourceButton.addActionListener(e -> sourceButtonClicked());
-        analyzeButton.addActionListener(e -> analyzeButtonClicked());
+
+        sourceTextField.setText("D:\\iso\\video.mkv");
+        etaLabel.setText(ETA_DEFAULT);
+
+        sourceButton.addActionListener(evt -> sourceButtonClicked());
+        analyzeButton.addActionListener(evt -> analyzeButtonClicked());
 
         trackTree.setModel(null);
         trackTree.setRootVisible(false);
         trackTree.setRowHeight(18);
-        trackTree.addTreeWillExpandListener(new TreeWillExpandListener() {
-            @Override
-            public void treeWillExpand(TreeExpansionEvent event) {
-            }
-
-            @Override
-            public void treeWillCollapse(TreeExpansionEvent event) throws ExpandVetoException {
-                throw new ExpandVetoException(event);
-            }
-        });
-
-        trackTree.setCellRenderer(new DefaultTreeCellRenderer() {
-            @Override
-            public Component getTreeCellRendererComponent(JTree tree, Object value, boolean sel, boolean expanded, boolean leaf, int row, boolean hasFocus) {
-                super.getTreeCellRendererComponent(tree, value, sel, expanded, leaf, row, hasFocus);
-                DefaultMutableTreeNode node = (DefaultMutableTreeNode) value;
-                Object userObject = node.getUserObject();
-                // customizing categories
-                if (VIDEO_CATEGORY_LABEL.equals(node.getUserObject().toString())) {
-                    this.setIcon(VIDEO_CATEGORY_ICON);
-                } else if (AUDIO_CATEGORY_LABEL.equals(node.getUserObject().toString())) {
-                    this.setIcon(AUDIO_CATEGORY_ICON);
-                } else if (SUBTITLES_CATEGORY_LABEL.equals(node.getUserObject().toString())) {
-                    this.setIcon(SUBTITLES_CATEGORY_ICON);
-                } else if (CHAPTERS_CATEGORY_LABEL.equals(node.getUserObject().toString())) {
-                    this.setIcon(CHAPTERS_CATEGORY_ICON);
-                }
-                // customizing tracks
-                if (Track.class.isAssignableFrom(node.getUserObject().getClass())) {
-                    this.setText(((Track) userObject).getLabel());
-                }
-                if (userObject instanceof VideoTrack) {
-                    this.setIcon(((VideoTrack) userObject).getDemuxOptions().isExtract() ? EXTRACT_YES_ICON : EXTRACT_NO_ICON);
-                } else if (userObject instanceof AudioTrack) {
-                    this.setIcon(((AudioTrack) userObject).getDemuxOptions().isExtract() ? EXTRACT_YES_ICON : EXTRACT_NO_ICON);
-                } else if (userObject instanceof SubtitlesTrack) {
-                    this.setIcon(((SubtitlesTrack) userObject).getDemuxOptions().isExtract() ? EXTRACT_YES_ICON : EXTRACT_NO_ICON);
-                } else if (userObject instanceof ChaptersTrack) {
-                    this.setIcon(((ChaptersTrack) userObject).getDemuxOptions().isExtract() ? EXTRACT_YES_ICON : EXTRACT_NO_ICON);
-                }
-                return this;
-            }
-        });
-    }
-
-    private void initComponents() {
-        sourceTextField.setText("D:\\iso\\video.mkv");
-        etaLabel.setText(ETA_DEFAULT);
+        trackTree.addTreeWillExpandListener(customTreeWillExpandListener());
+        trackTree.setCellRenderer(customCellRenderer());
+        trackTree.addTreeSelectionListener(nodeSelected());
     }
 
     public void startBackgroundTask() {
@@ -104,6 +63,7 @@ public class RipManagerImpl extends RipManager {
         analyzeButton.setText("Abort");
         progressBar.setValue(0);
         etaLabel.setText(ETA_DEFAULT);
+        trackTree.setModel(null);
     }
 
     public void endBackgroundTask() {
@@ -113,24 +73,6 @@ public class RipManagerImpl extends RipManager {
         analyzeButton.setText("Analyze");
         progressBar.setValue(0);
         etaLabel.setText(ETA_DEFAULT);
-    }
-
-    private PropertyChangeListener generatePropertyChangeListener() {
-        return evt -> {
-            if (!worker.isDone()) {
-                switch (evt.getPropertyName()) {
-                    case "progress":
-                        progressBar.setValue((Integer) evt.getNewValue());
-                        break;
-                    case "output":
-                        outputTextArea.setText((String) evt.getNewValue());
-                        break;
-                    case "eta":
-                        etaLabel.setText(evt.getNewValue() == null ? ETA_DEFAULT : "ETA: " + formatInterval((Long) evt.getNewValue()));
-                        break;
-                }
-            }
-        };
     }
 
     private void sourceButtonClicked() {
@@ -155,7 +97,7 @@ public class RipManagerImpl extends RipManager {
             startBackgroundTask();
             outputTextArea.setText(null);
             worker = new BackgroundWorker(WorkerCommand.ANALYZE, sourceTextField.getText(), null, this);
-            worker.addPropertyChangeListener(generatePropertyChangeListener());
+            worker.addPropertyChangeListener(propertyChanged());
             worker.execute();
         } else {
             worker.cancel(true);
@@ -206,6 +148,106 @@ public class RipManagerImpl extends RipManager {
         for (int i = 0; i < trackTree.getRowCount(); i++) {
             trackTree.expandRow(i);
         }
+    }
+
+    private PropertyChangeListener propertyChanged() {
+        return evt -> {
+            if (!worker.isDone()) {
+                switch (evt.getPropertyName()) {
+                    case "progress":
+                        progressBar.setValue((Integer) evt.getNewValue());
+                        break;
+                    case "output":
+                        outputTextArea.setText((String) evt.getNewValue());
+                        break;
+                    case "eta":
+                        etaLabel.setText(evt.getNewValue() == null ? ETA_DEFAULT : "ETA: " + formatInterval((Long) evt.getNewValue()));
+                        break;
+                }
+            }
+        };
+    }
+
+    // expand listener that prevents the collapse of category nodes
+    private TreeWillExpandListener customTreeWillExpandListener() {
+        return new TreeWillExpandListener() {
+            @Override
+            public void treeWillExpand(TreeExpansionEvent event) {
+            }
+
+            @Override
+            public void treeWillCollapse(TreeExpansionEvent event) throws ExpandVetoException {
+                throw new ExpandVetoException(event);
+            }
+        };
+    }
+
+    // customization of tree rendering, with icon and calculated labels
+    private DefaultTreeCellRenderer customCellRenderer() {
+        return new DefaultTreeCellRenderer() {
+            @Override
+            public Component getTreeCellRendererComponent(JTree tree, Object value, boolean sel, boolean expanded, boolean leaf, int row, boolean hasFocus) {
+                super.getTreeCellRendererComponent(tree, value, sel, expanded, leaf, row, hasFocus);
+                DefaultMutableTreeNode node = (DefaultMutableTreeNode) value;
+                Object userObject = node.getUserObject();
+                // customizing categories
+                if (VIDEO_CATEGORY_LABEL.equals(node.getUserObject().toString())) {
+                    this.setIcon(VIDEO_CATEGORY_ICON);
+                } else if (AUDIO_CATEGORY_LABEL.equals(node.getUserObject().toString())) {
+                    this.setIcon(AUDIO_CATEGORY_ICON);
+                } else if (SUBTITLES_CATEGORY_LABEL.equals(node.getUserObject().toString())) {
+                    this.setIcon(SUBTITLES_CATEGORY_ICON);
+                } else if (CHAPTERS_CATEGORY_LABEL.equals(node.getUserObject().toString())) {
+                    this.setIcon(CHAPTERS_CATEGORY_ICON);
+                }
+                // customizing tracks
+                if (Track.class.isAssignableFrom(node.getUserObject().getClass())) {
+                    this.setText(((Track) userObject).getLabel());
+                }
+                if (userObject instanceof VideoTrack) {
+                    this.setIcon(((VideoTrack) userObject).getDemuxOptions().isSelected() ? SELECTED_YES_ICON : SELECTED_NO_ICON);
+                } else if (userObject instanceof AudioTrack) {
+                    this.setIcon(((AudioTrack) userObject).getDemuxOptions().isSelected() ? SELECTED_YES_ICON : SELECTED_NO_ICON);
+                } else if (userObject instanceof SubtitlesTrack) {
+                    this.setIcon(((SubtitlesTrack) userObject).getDemuxOptions().isSelected() ? SELECTED_YES_ICON : SELECTED_NO_ICON);
+                } else if (userObject instanceof ChaptersTrack) {
+                    this.setIcon(((ChaptersTrack) userObject).getDemuxOptions().isSelected() ? SELECTED_YES_ICON : SELECTED_NO_ICON);
+                }
+                return this;
+            }
+        };
+    }
+
+    private TreeSelectionListener nodeSelected() {
+        return evt -> {
+            DefaultMutableTreeNode node = (DefaultMutableTreeNode) trackTree.getLastSelectedPathComponent();
+            if (node == null) {
+                return;
+            }
+            // prevent selection of categories
+            if (!node.isLeaf()) {
+                trackTree.setSelectionPath(evt.getOldLeadSelectionPath());
+                return;
+            }
+            Object userObject = node.getUserObject();
+            if (userObject instanceof VideoTrack) {
+                VideoTrack track = (VideoTrack) userObject;
+                selectedCheckBox.setEnabled(true);
+                selectedCheckBox.setSelected(track.getDemuxOptions().isSelected());
+            } else if (userObject instanceof AudioTrack) {
+                AudioTrack track = (AudioTrack) userObject;
+                selectedCheckBox.setEnabled(true);
+                selectedCheckBox.setSelected(track.getDemuxOptions().isSelected());
+            } else if (userObject instanceof SubtitlesTrack) {
+                SubtitlesTrack track = (SubtitlesTrack) userObject;
+                selectedCheckBox.setEnabled(true);
+                selectedCheckBox.setSelected(track.getDemuxOptions().isSelected());
+            } else if (userObject instanceof ChaptersTrack) {
+                ChaptersTrack track = (ChaptersTrack) userObject;
+                selectedCheckBox.setEnabled(true);
+                selectedCheckBox.setSelected(track.getDemuxOptions().isSelected());
+            }
+        };
     }
 
 }

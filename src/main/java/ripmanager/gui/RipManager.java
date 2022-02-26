@@ -19,6 +19,7 @@ public class RipManager extends javax.swing.JFrame {
         etaLabel = new javax.swing.JLabel();
         treeScrollPane = new javax.swing.JScrollPane();
         trackTree = new javax.swing.JTree();
+        selectedCheckBox = new javax.swing.JCheckBox();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setTitle("RipManager");
@@ -40,6 +41,10 @@ public class RipManager extends javax.swing.JFrame {
 
         treeScrollPane.setViewportView(trackTree);
 
+        selectedCheckBox.setText("Select track");
+        selectedCheckBox.setEnabled(false);
+        selectedCheckBox.setHorizontalTextPosition(javax.swing.SwingConstants.LEADING);
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
@@ -57,8 +62,9 @@ public class RipManager extends javax.swing.JFrame {
                                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                                                 .addComponent(etaLabel, javax.swing.GroupLayout.PREFERRED_SIZE, 80, javax.swing.GroupLayout.PREFERRED_SIZE))
                                         .addGroup(layout.createSequentialGroup()
-                                                .addComponent(treeScrollPane, javax.swing.GroupLayout.PREFERRED_SIZE, 653, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                                .addGap(0, 0, Short.MAX_VALUE)))
+                                                .addComponent(treeScrollPane)
+                                                .addGap(18, 18, 18)
+                                                .addComponent(selectedCheckBox)))
                                 .addGap(18, 18, 18)
                                 .addComponent(outputScrollPane, javax.swing.GroupLayout.DEFAULT_SIZE, 981, Short.MAX_VALUE)
                                 .addContainerGap())
@@ -75,7 +81,11 @@ public class RipManager extends javax.swing.JFrame {
                                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                                                 .addComponent(analyzeButton)
                                                 .addGap(18, 18, 18)
-                                                .addComponent(treeScrollPane)
+                                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                                        .addComponent(treeScrollPane)
+                                                        .addGroup(layout.createSequentialGroup()
+                                                                .addComponent(selectedCheckBox)
+                                                                .addGap(0, 0, Short.MAX_VALUE)))
                                                 .addGap(18, 18, 18)
                                                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                                                         .addComponent(progressBar, javax.swing.GroupLayout.PREFERRED_SIZE, 25, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -93,6 +103,7 @@ public class RipManager extends javax.swing.JFrame {
     protected javax.swing.JScrollPane outputScrollPane;
     protected javax.swing.JTextArea outputTextArea;
     protected javax.swing.JProgressBar progressBar;
+    protected javax.swing.JCheckBox selectedCheckBox;
     protected javax.swing.JButton sourceButton;
     protected javax.swing.JTextField sourceTextField;
     protected javax.swing.JTree trackTree;

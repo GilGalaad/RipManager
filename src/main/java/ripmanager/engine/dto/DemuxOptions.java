@@ -9,6 +9,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class DemuxOptions {
 
-    private boolean extract;
+    private boolean selected;
 
 }
