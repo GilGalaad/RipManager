@@ -8,11 +8,11 @@ import ripmanager.worker.WorkerOutcome;
 
 import javax.swing.*;
 import javax.swing.event.TreeExpansionEvent;
-import javax.swing.event.TreeSelectionListener;
+import javax.swing.event.TreeSelectionEvent;
 import javax.swing.event.TreeWillExpandListener;
 import javax.swing.tree.*;
 import java.awt.*;
-import java.beans.PropertyChangeListener;
+import java.beans.PropertyChangeEvent;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -51,9 +51,9 @@ public class RipManagerImpl extends RipManager {
         trackTree.setModel(null);
         trackTree.setRootVisible(false);
         trackTree.setRowHeight(18);
-        trackTree.addTreeWillExpandListener(customTreeWillExpandListener());
-        trackTree.setCellRenderer(customCellRenderer());
-        trackTree.addTreeSelectionListener(nodeSelected());
+        trackTree.addTreeWillExpandListener(createCustomTreeWillExpandListener());
+        trackTree.setCellRenderer(createCustomCellRenderer());
+        trackTree.addTreeSelectionListener(this::nodeSelected);
     }
 
     public void startBackgroundTask() {
@@ -97,7 +97,7 @@ public class RipManagerImpl extends RipManager {
             startBackgroundTask();
             outputTextArea.setText(null);
             worker = new BackgroundWorker(WorkerCommand.ANALYZE, sourceTextField.getText(), null, this);
-            worker.addPropertyChangeListener(propertyChanged());
+            worker.addPropertyChangeListener(this::propertyChanged);
             worker.execute();
         } else {
             worker.cancel(true);
@@ -150,26 +150,24 @@ public class RipManagerImpl extends RipManager {
         }
     }
 
-    private PropertyChangeListener propertyChanged() {
-        return evt -> {
-            if (!worker.isDone()) {
-                switch (evt.getPropertyName()) {
-                    case "progress":
-                        progressBar.setValue((Integer) evt.getNewValue());
-                        break;
-                    case "output":
-                        outputTextArea.setText((String) evt.getNewValue());
-                        break;
-                    case "eta":
-                        etaLabel.setText(evt.getNewValue() == null ? ETA_DEFAULT : "ETA: " + formatInterval((Long) evt.getNewValue()));
-                        break;
-                }
+    private void propertyChanged(PropertyChangeEvent evt) {
+        if (!worker.isDone()) {
+            switch (evt.getPropertyName()) {
+                case "progress":
+                    progressBar.setValue((Integer) evt.getNewValue());
+                    break;
+                case "output":
+                    outputTextArea.setText((String) evt.getNewValue());
+                    break;
+                case "eta":
+                    etaLabel.setText(evt.getNewValue() == null ? ETA_DEFAULT : "ETA: " + formatInterval((Long) evt.getNewValue()));
+                    break;
             }
-        };
+        }
     }
 
     // expand listener that prevents the collapse of category nodes
-    private TreeWillExpandListener customTreeWillExpandListener() {
+    private TreeWillExpandListener createCustomTreeWillExpandListener() {
         return new TreeWillExpandListener() {
             @Override
             public void treeWillExpand(TreeExpansionEvent event) {
@@ -183,7 +181,7 @@ public class RipManagerImpl extends RipManager {
     }
 
     // customization of tree rendering, with icon and calculated labels
-    private DefaultTreeCellRenderer customCellRenderer() {
+    private DefaultTreeCellRenderer createCustomCellRenderer() {
         return new DefaultTreeCellRenderer() {
             @Override
             public Component getTreeCellRendererComponent(JTree tree, Object value, boolean sel, boolean expanded, boolean leaf, int row, boolean hasFocus) {
@@ -218,36 +216,34 @@ public class RipManagerImpl extends RipManager {
         };
     }
 
-    private TreeSelectionListener nodeSelected() {
-        return evt -> {
-            DefaultMutableTreeNode node = (DefaultMutableTreeNode) trackTree.getLastSelectedPathComponent();
-            if (node == null) {
-                return;
-            }
-            // prevent selection of categories
-            if (!node.isLeaf()) {
-                trackTree.setSelectionPath(evt.getOldLeadSelectionPath());
-                return;
-            }
-            Object userObject = node.getUserObject();
-            if (userObject instanceof VideoTrack) {
-                VideoTrack track = (VideoTrack) userObject;
-                selectedCheckBox.setEnabled(true);
-                selectedCheckBox.setSelected(track.getDemuxOptions().isSelected());
-            } else if (userObject instanceof AudioTrack) {
-                AudioTrack track = (AudioTrack) userObject;
-                selectedCheckBox.setEnabled(true);
-                selectedCheckBox.setSelected(track.getDemuxOptions().isSelected());
-            } else if (userObject instanceof SubtitlesTrack) {
-                SubtitlesTrack track = (SubtitlesTrack) userObject;
-                selectedCheckBox.setEnabled(true);
-                selectedCheckBox.setSelected(track.getDemuxOptions().isSelected());
-            } else if (userObject instanceof ChaptersTrack) {
-                ChaptersTrack track = (ChaptersTrack) userObject;
-                selectedCheckBox.setEnabled(true);
-                selectedCheckBox.setSelected(track.getDemuxOptions().isSelected());
-            }
-        };
+    private void nodeSelected(TreeSelectionEvent evt) {
+        DefaultMutableTreeNode node = (DefaultMutableTreeNode) trackTree.getLastSelectedPathComponent();
+        if (node == null) {
+            return;
+        }
+        // prevent selection of categories
+        if (!node.isLeaf()) {
+            trackTree.setSelectionPath(evt.getOldLeadSelectionPath());
+            return;
+        }
+        Object userObject = node.getUserObject();
+        if (userObject instanceof VideoTrack) {
+            VideoTrack track = (VideoTrack) userObject;
+            selectedCheckBox.setEnabled(true);
+            selectedCheckBox.setSelected(track.getDemuxOptions().isSelected());
+        } else if (userObject instanceof AudioTrack) {
+            AudioTrack track = (AudioTrack) userObject;
+            selectedCheckBox.setEnabled(true);
+            selectedCheckBox.setSelected(track.getDemuxOptions().isSelected());
+        } else if (userObject instanceof SubtitlesTrack) {
+            SubtitlesTrack track = (SubtitlesTrack) userObject;
+            selectedCheckBox.setEnabled(true);
+            selectedCheckBox.setSelected(track.getDemuxOptions().isSelected());
+        } else if (userObject instanceof ChaptersTrack) {
+            ChaptersTrack track = (ChaptersTrack) userObject;
+            selectedCheckBox.setEnabled(true);
+            selectedCheckBox.setSelected(track.getDemuxOptions().isSelected());
+        }
     }
 
 }
