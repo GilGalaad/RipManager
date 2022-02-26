@@ -12,6 +12,7 @@ import javax.swing.event.TreeSelectionEvent;
 import javax.swing.event.TreeWillExpandListener;
 import javax.swing.tree.*;
 import java.awt.*;
+import java.awt.event.ActionEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.beans.PropertyChangeEvent;
@@ -58,26 +59,29 @@ public class RipManagerImpl extends RipManager {
         trackTree.setCellRenderer(createCustomCellRenderer());
         trackTree.addMouseListener(createCustomMouseListener());
         trackTree.addTreeSelectionListener(this::nodeSelected);
+
+        selectedCheckBox.addActionListener(this::demuxOptionChanged);
+        convertToHuffCheckBox.addActionListener(this::demuxOptionChanged);
     }
 
     public void startBackgroundTask() {
         running = true;
         sourceButton.setEnabled(false);
         analyzeButton.setText("Abort");
+        trackTree.setEnabled(false);
         progressBar.setValue(0);
         etaLabel.setText(ETA_DEFAULT);
-        trackTree.setModel(null);
-        clearAllDemuxOptions();
-        disableAllDemuxOptions();
+        disableDemuxOptions();
     }
 
     public void endBackgroundTask() {
         running = false;
         sourceButton.setEnabled(true);
         analyzeButton.setText("Analyze");
+        trackTree.setEnabled(true);
         progressBar.setValue(0);
         etaLabel.setText(ETA_DEFAULT);
-        configureDemuxOptionsBySelectedNode();
+        configureDemuxOptions();
     }
 
     private void sourceButtonClicked() {
@@ -100,12 +104,32 @@ public class RipManagerImpl extends RipManager {
     public void analyzeButtonClicked() {
         if (!running) {
             startBackgroundTask();
+            // clearing ui
+            trackTree.setModel(null);
             outputTextArea.setText(null);
+            clearDemuxOptions();
+            // starting worker
             worker = new BackgroundWorker(WorkerCommand.ANALYZE, sourceTextField.getText(), null, this);
-            worker.addPropertyChangeListener(this::propertyChanged);
+            worker.addPropertyChangeListener(this::workerPropertyChanged);
             worker.execute();
         } else {
             worker.cancel(true);
+        }
+    }
+
+    private void workerPropertyChanged(PropertyChangeEvent evt) {
+        if (!worker.isDone()) {
+            switch (evt.getPropertyName()) {
+                case "progress":
+                    progressBar.setValue((Integer) evt.getNewValue());
+                    break;
+                case "output":
+                    outputTextArea.setText((String) evt.getNewValue());
+                    break;
+                case "eta":
+                    etaLabel.setText(evt.getNewValue() == null ? ETA_DEFAULT : "ETA: " + formatInterval((Long) evt.getNewValue()));
+                    break;
+            }
         }
     }
 
@@ -151,22 +175,6 @@ public class RipManagerImpl extends RipManager {
         // expand all
         for (int i = 0; i < trackTree.getRowCount(); i++) {
             trackTree.expandRow(i);
-        }
-    }
-
-    private void propertyChanged(PropertyChangeEvent evt) {
-        if (!worker.isDone()) {
-            switch (evt.getPropertyName()) {
-                case "progress":
-                    progressBar.setValue((Integer) evt.getNewValue());
-                    break;
-                case "output":
-                    outputTextArea.setText((String) evt.getNewValue());
-                    break;
-                case "eta":
-                    etaLabel.setText(evt.getNewValue() == null ? ETA_DEFAULT : "ETA: " + formatInterval((Long) evt.getNewValue()));
-                    break;
-            }
         }
     }
 
@@ -227,8 +235,8 @@ public class RipManagerImpl extends RipManager {
             public void mouseClicked(MouseEvent e) {
                 if (trackTree.getRowForLocation(e.getX(), e.getY()) == -1) {
                     trackTree.clearSelection();
-                    clearAllDemuxOptions();
-                    disableAllDemuxOptions();
+                    clearDemuxOptions();
+                    disableDemuxOptions();
                 }
             }
 
@@ -256,28 +264,27 @@ public class RipManagerImpl extends RipManager {
             return;
         }
         DefaultMutableTreeNode node = (DefaultMutableTreeNode) trackTree.getLastSelectedPathComponent();
-        // prevent selection of categories
+        // prevent selection of categories (non leaf nodes)
         if (!node.isLeaf()) {
             trackTree.setSelectionPath(evt.getOldLeadSelectionPath());
             return;
         }
-        configureDemuxOptionsBySelectedNode();
+        configureDemuxOptions();
     }
 
-    // when starting analyze
-    private void clearAllDemuxOptions() {
+    private void clearDemuxOptions() {
         selectedCheckBox.setSelected(false);
         convertToHuffCheckBox.setSelected(false);
     }
 
-    // when starting worker
-    private void disableAllDemuxOptions() {
+    private void disableDemuxOptions() {
         selectedCheckBox.setEnabled(false);
         convertToHuffCheckBox.setEnabled(false);
     }
 
-    // when worker ends
-    private void configureDemuxOptionsBySelectedNode() {
+    // called when worker ends to re-enable demux options based on eventual selected node
+    // or after a node selection to update demux options
+    private void configureDemuxOptions() {
         // if no node selected, nothing to do
         if (trackTree.getModel() == null || trackTree.getLastSelectedPathComponent() == null) {
             return;
@@ -309,6 +316,31 @@ public class RipManagerImpl extends RipManager {
             convertToHuffCheckBox.setEnabled(false);
             convertToHuffCheckBox.setSelected(false);
         }
+    }
+
+    private void demuxOptionChanged(ActionEvent evt) {
+        // if no node selected, nothing to do
+        if (trackTree.getModel() == null || trackTree.getLastSelectedPathComponent() == null) {
+            log.warn("ActionEvent called with empty tree or no node selected, the checkbox should be disabled");
+            return;
+        }
+        DefaultMutableTreeNode node = (DefaultMutableTreeNode) trackTree.getLastSelectedPathComponent();
+        Object userObject = node.getUserObject();
+        if (evt.getSource() == selectedCheckBox) {
+            if (userObject instanceof VideoTrack) {
+                ((VideoTrack) userObject).getDemuxOptions().setSelected(((JCheckBox) evt.getSource()).isSelected());
+            } else if (userObject instanceof AudioTrack) {
+                ((AudioTrack) userObject).getDemuxOptions().setSelected(((JCheckBox) evt.getSource()).isSelected());
+            } else if (userObject instanceof SubtitlesTrack) {
+                ((SubtitlesTrack) userObject).getDemuxOptions().setSelected(((JCheckBox) evt.getSource()).isSelected());
+            } else if (userObject instanceof ChaptersTrack) {
+                ((ChaptersTrack) userObject).getDemuxOptions().setSelected(((JCheckBox) evt.getSource()).isSelected());
+            }
+            ((DefaultTreeModel) trackTree.getModel()).nodeChanged(node);
+        } else if (evt.getSource() == convertToHuffCheckBox) {
+            ((VideoTrack) userObject).getDemuxOptions().setConvertToHuff(((JCheckBox) evt.getSource()).isSelected());
+        }
+        log.info(userObject);
     }
 
 }
