@@ -1,9 +1,12 @@
 package ripmanager.engine.enums;
 
+import lombok.Getter;
+
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Getter
 public enum AudioCodec {
     DOLBY_ATMOS(Arrays.asList("TrueHD (Atmos)", "TrueHD/AC3 (Atmos)"), true, "thd", "ac3"),
     DOLBY_THD(Arrays.asList("TrueHD", "TrueHD/AC3"), true, "thd", "ac3"),

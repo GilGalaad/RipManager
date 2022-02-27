@@ -1,5 +1,8 @@
 package ripmanager.engine.enums;
 
+import lombok.Getter;
+
+@Getter
 public enum Language {
     ITALIAN("Italian", "it"),
     ENGLISH("English", "en"),

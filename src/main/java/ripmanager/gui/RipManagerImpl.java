@@ -41,6 +41,7 @@ public class RipManagerImpl extends RipManager {
 
     private boolean running = false;
     private BackgroundWorker worker;
+    private List<Track> tracks;
 
     public RipManagerImpl() {
         super();
@@ -62,12 +63,18 @@ public class RipManagerImpl extends RipManager {
 
         selectedCheckBox.addActionListener(this::demuxOptionChanged);
         convertToHuffCheckBox.addActionListener(this::demuxOptionChanged);
+        losslessAndLossyRadioButton.addActionListener(this::demuxOptionChanged);
+        losslessRadioButton.addActionListener(this::demuxOptionChanged);
+        lossyRadioButton.addActionListener(this::demuxOptionChanged);
+        normalizeCheckBox.addActionListener(this::demuxOptionChanged);
+        extractCoreCheckBox.addActionListener(this::demuxOptionChanged);
     }
 
     public void startBackgroundTask() {
         running = true;
         sourceButton.setEnabled(false);
-        analyzeButton.setText("Abort");
+        analyzeButton.setEnabled(false);
+        printCommandsButton.setEnabled(false);
         trackTree.setEnabled(false);
         progressBar.setValue(0);
         etaLabel.setText(ETA_DEFAULT);
@@ -77,7 +84,10 @@ public class RipManagerImpl extends RipManager {
     public void endBackgroundTask() {
         running = false;
         sourceButton.setEnabled(true);
+        analyzeButton.setEnabled(true);
         analyzeButton.setText("Analyze");
+        printCommandsButton.setEnabled(true);
+        printCommandsButton.setText("Print Commands");
         trackTree.setEnabled(true);
         progressBar.setValue(0);
         etaLabel.setText(ETA_DEFAULT);
@@ -101,22 +111,6 @@ public class RipManagerImpl extends RipManager {
         }
     }
 
-    public void analyzeButtonClicked() {
-        if (!running) {
-            startBackgroundTask();
-            // clearing ui
-            trackTree.setModel(null);
-            outputTextArea.setText(null);
-            clearDemuxOptions();
-            // starting worker
-            worker = new BackgroundWorker(WorkerCommand.ANALYZE, sourceTextField.getText(), null, this);
-            worker.addPropertyChangeListener(this::workerPropertyChanged);
-            worker.execute();
-        } else {
-            worker.cancel(true);
-        }
-    }
-
     private void workerPropertyChanged(PropertyChangeEvent evt) {
         if (!worker.isDone()) {
             switch (evt.getPropertyName()) {
@@ -133,6 +127,25 @@ public class RipManagerImpl extends RipManager {
         }
     }
 
+    public void analyzeButtonClicked() {
+        if (!running) {
+            startBackgroundTask();
+            // mutating button
+            analyzeButton.setText("Abort");
+            analyzeButton.setEnabled(true);
+            // clearing ui
+            trackTree.setModel(null);
+            outputTextArea.setText(null);
+            clearDemuxOptions();
+            // starting worker
+            worker = new BackgroundWorker(WorkerCommand.ANALYZE, sourceTextField.getText(), null, this);
+            worker.addPropertyChangeListener(this::workerPropertyChanged);
+            worker.execute();
+        } else {
+            worker.cancel(true);
+        }
+    }
+
     public void analyzeTaskCallback(WorkerOutcome outcome) {
         endBackgroundTask();
         outputTextArea.setText(outcome.getOutput());
@@ -140,7 +153,8 @@ public class RipManagerImpl extends RipManager {
             JOptionPane.showMessageDialog(this, "Process finished with errors", "Error", JOptionPane.ERROR_MESSAGE);
             return;
         }
-        populateTree(outcome.getTracks());
+        tracks = outcome.getTracks();
+        populateTree();
     }
 
     public void analyzeTaskCallback(Exception ex) {
@@ -149,7 +163,7 @@ public class RipManagerImpl extends RipManager {
         JOptionPane.showMessageDialog(this, "Exception while running process", "Error", JOptionPane.ERROR_MESSAGE);
     }
 
-    private void populateTree(List<Track> tracks) {
+    private void populateTree() {
         DefaultMutableTreeNode rootNode = new DefaultMutableTreeNode(Paths.get(sourceTextField.getText()).getFileName(), true);
         if (tracks.stream().anyMatch(i -> i.getType() == TrackType.VIDEO)) {
             DefaultMutableTreeNode videoCategory = new DefaultMutableTreeNode(VIDEO_CATEGORY_LABEL, true);
@@ -235,8 +249,8 @@ public class RipManagerImpl extends RipManager {
             public void mouseClicked(MouseEvent e) {
                 if (trackTree.getRowForLocation(e.getX(), e.getY()) == -1) {
                     trackTree.clearSelection();
-                    clearDemuxOptions();
                     disableDemuxOptions();
+                    clearDemuxOptions();
                 }
             }
 
@@ -273,13 +287,48 @@ public class RipManagerImpl extends RipManager {
     }
 
     private void clearDemuxOptions() {
-        selectedCheckBox.setSelected(false);
-        convertToHuffCheckBox.setSelected(false);
+        clearGeneralDemuxOptions();
+        clearVideoDemuxOptions();
+        clearAudioDemuxOptions();
     }
 
     private void disableDemuxOptions() {
+        disableGeneralDemuxOptions();
+        disableVideoDemuxOptions();
+        disableAudioDemuxOptions();
+    }
+
+    private void clearGeneralDemuxOptions() {
+        selectedCheckBox.setSelected(false);
+    }
+
+    private void disableGeneralDemuxOptions() {
         selectedCheckBox.setEnabled(false);
+    }
+
+    private void clearVideoDemuxOptions() {
+        convertToHuffCheckBox.setSelected(false);
+    }
+
+    private void disableVideoDemuxOptions() {
         convertToHuffCheckBox.setEnabled(false);
+    }
+
+    private void clearAudioDemuxOptions() {
+        audioDemuxButtonGroup.clearSelection();
+        losslessAndLossyRadioButton.setSelected(false);
+        losslessRadioButton.setSelected(false);
+        lossyRadioButton.setSelected(false);
+        normalizeCheckBox.setSelected(false);
+        extractCoreCheckBox.setSelected(false);
+    }
+
+    private void disableAudioDemuxOptions() {
+        losslessAndLossyRadioButton.setEnabled(false);
+        losslessRadioButton.setEnabled(false);
+        lossyRadioButton.setEnabled(false);
+        normalizeCheckBox.setEnabled(false);
+        extractCoreCheckBox.setEnabled(false);
     }
 
     // called when worker ends to re-enable demux options based on eventual selected node
@@ -287,34 +336,74 @@ public class RipManagerImpl extends RipManager {
     private void configureDemuxOptions() {
         // if no node selected, nothing to do
         if (trackTree.getModel() == null || trackTree.getLastSelectedPathComponent() == null) {
+            disableDemuxOptions();
+            clearDemuxOptions();
             return;
         }
         DefaultMutableTreeNode node = (DefaultMutableTreeNode) trackTree.getLastSelectedPathComponent();
         Object userObject = node.getUserObject();
         if (userObject instanceof VideoTrack) {
             VideoTrack track = (VideoTrack) userObject;
+            // general
             selectedCheckBox.setEnabled(true);
             selectedCheckBox.setSelected(track.getDemuxOptions().isSelected());
+            // video
             convertToHuffCheckBox.setEnabled(true);
             convertToHuffCheckBox.setSelected(track.getDemuxOptions().isConvertToHuff());
+            // audio
+            disableAudioDemuxOptions();
+            clearAudioDemuxOptions();
         } else if (userObject instanceof AudioTrack) {
             AudioTrack track = (AudioTrack) userObject;
+            // general
             selectedCheckBox.setEnabled(true);
             selectedCheckBox.setSelected(track.getDemuxOptions().isSelected());
-            convertToHuffCheckBox.setEnabled(false);
-            convertToHuffCheckBox.setSelected(false);
+            // video
+            disableVideoDemuxOptions();
+            clearVideoDemuxOptions();
+            // audio
+            if (track.getProperties().getCodec().isLossless()) {
+                losslessAndLossyRadioButton.setEnabled(true);
+                losslessAndLossyRadioButton.setSelected(track.getDemuxOptions().getDemuxStrategy() == LosslessDemuxStrategy.KEEP_BOTH);
+                losslessRadioButton.setEnabled(true);
+                losslessRadioButton.setSelected(track.getDemuxOptions().getDemuxStrategy() == LosslessDemuxStrategy.KEEP_LOSSLESS);
+                lossyRadioButton.setEnabled(true);
+                lossyRadioButton.setSelected(track.getDemuxOptions().getDemuxStrategy() == LosslessDemuxStrategy.KEEP_LOSSY);
+                normalizeCheckBox.setEnabled(true);
+                normalizeCheckBox.setSelected(track.getDemuxOptions().getNormalize() != null && track.getDemuxOptions().getNormalize());
+                if (track.getProperties().isHasCore()) {
+                    extractCoreCheckBox.setEnabled(true);
+                    extractCoreCheckBox.setSelected(track.getDemuxOptions().getExtractCore() != null && track.getDemuxOptions().getExtractCore());
+                } else {
+                    extractCoreCheckBox.setEnabled(false);
+                    extractCoreCheckBox.setSelected(false);
+                }
+            } else {
+                disableAudioDemuxOptions();
+                clearAudioDemuxOptions();
+            }
         } else if (userObject instanceof SubtitlesTrack) {
             SubtitlesTrack track = (SubtitlesTrack) userObject;
+            // general
             selectedCheckBox.setEnabled(true);
             selectedCheckBox.setSelected(track.getDemuxOptions().isSelected());
-            convertToHuffCheckBox.setEnabled(false);
-            convertToHuffCheckBox.setSelected(false);
+            // video
+            disableVideoDemuxOptions();
+            clearVideoDemuxOptions();
+            // audio
+            disableAudioDemuxOptions();
+            clearAudioDemuxOptions();
         } else if (userObject instanceof ChaptersTrack) {
             ChaptersTrack track = (ChaptersTrack) userObject;
+            // general
             selectedCheckBox.setEnabled(true);
             selectedCheckBox.setSelected(track.getDemuxOptions().isSelected());
-            convertToHuffCheckBox.setEnabled(false);
-            convertToHuffCheckBox.setSelected(false);
+            // video
+            disableVideoDemuxOptions();
+            clearVideoDemuxOptions();
+            // audio
+            disableAudioDemuxOptions();
+            clearAudioDemuxOptions();
         }
     }
 
@@ -339,6 +428,16 @@ public class RipManagerImpl extends RipManager {
             ((DefaultTreeModel) trackTree.getModel()).nodeChanged(node);
         } else if (evt.getSource() == convertToHuffCheckBox) {
             ((VideoTrack) userObject).getDemuxOptions().setConvertToHuff(((JCheckBox) evt.getSource()).isSelected());
+        } else if (evt.getSource() == losslessAndLossyRadioButton) {
+            ((AudioTrack) userObject).getDemuxOptions().setDemuxStrategy(LosslessDemuxStrategy.KEEP_BOTH);
+        } else if (evt.getSource() == losslessRadioButton) {
+            ((AudioTrack) userObject).getDemuxOptions().setDemuxStrategy(LosslessDemuxStrategy.KEEP_LOSSLESS);
+        } else if (evt.getSource() == lossyRadioButton) {
+            ((AudioTrack) userObject).getDemuxOptions().setDemuxStrategy(LosslessDemuxStrategy.KEEP_LOSSY);
+        } else if (evt.getSource() == normalizeCheckBox) {
+            ((AudioTrack) userObject).getDemuxOptions().setNormalize(((JCheckBox) evt.getSource()).isSelected());
+        } else if (evt.getSource() == extractCoreCheckBox) {
+            ((AudioTrack) userObject).getDemuxOptions().setExtractCore(((JCheckBox) evt.getSource()).isSelected());
         }
         log.info(userObject);
     }

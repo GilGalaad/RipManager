@@ -51,11 +51,12 @@ public class BackgroundWorker extends SwingWorker<WorkerOutcome, Void> {
             if (parsedTracks.isEmpty()) {
                 return new WorkerOutcome(WorkerOutcome.Status.KO, output.toString(), parsedTracks);
             }
+
+            // if chapters are found, we are done
             if (parsedTracks.stream().anyMatch(i -> i.getType() == TrackType.CHAPTERS)) {
                 return new WorkerOutcome(WorkerOutcome.Status.OK, output.toString(), parsedTracks);
             }
-
-            // looking for chapters with mkvextract
+            // otherwise, looking for chapters with mkvextract
             output.append(System.lineSeparator());
             ProcessOutcome mkvInfoOutcome = runMkvInfo();
             if (mkvInfoOutcome.getExitCode() != 0) {

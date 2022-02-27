@@ -131,17 +131,30 @@ public class Eac3toParser {
         tracks.sort(Comparator.comparing(Track::getIndex));
 
         // applying default demux option for video and audio tracks
-        List<Track> videoTracks = tracks.stream().filter(i -> i.getType() == TrackType.VIDEO).collect(Collectors.toList());
+        List<VideoTrack> videoTracks = tracks.stream().filter(i -> i.getType() == TrackType.VIDEO).map(i -> (VideoTrack) i).collect(Collectors.toList());
         for (int i = 0; i < videoTracks.size(); i++) {
             if (i == 0) {
-                ((VideoTrack) videoTracks.get(i)).setDemuxOptions(new VideoDemuxOptions(true, true));
+                (videoTracks.get(i)).setDemuxOptions(new VideoDemuxOptions(true, true));
             } else {
-                ((VideoTrack) videoTracks.get(i)).setDemuxOptions(new VideoDemuxOptions(false, false));
+                (videoTracks.get(i)).setDemuxOptions(new VideoDemuxOptions(false, false));
             }
         }
-        tracks.stream().filter(i -> i.getType() == TrackType.AUDIO).forEachOrdered(i -> ((AudioTrack) i).setDemuxOptions(new AudioDemuxOptions(false)));
+        for (Language lang : DEFAULT_LANGUAGES) {
+            List<AudioTrack> audioTracks = tracks.stream().filter(i -> i.getType() == TrackType.AUDIO).map(i -> (AudioTrack) i).filter(i -> i.getProperties().getLanguage() == lang).collect(Collectors.toList());
+            for (int i = 0; i < audioTracks.size(); i++) {
+                AudioTrack track = audioTracks.get(i);
+                LosslessDemuxStrategy demuxStrategy = track.getProperties().getCodec().isLossless() ? LosslessDemuxStrategy.KEEP_BOTH : null;
+                Boolean normalize = track.getProperties().getCodec().isLossless() ? false : null;
+                Boolean extractCore = track.getProperties().getCodec().isLossless() ? false : null;
+                if (i == 0) {
+                    track.setDemuxOptions(new AudioDemuxOptions(true, demuxStrategy, normalize, extractCore));
+                } else {
+                    track.setDemuxOptions(new AudioDemuxOptions(false, demuxStrategy, normalize, extractCore));
+                }
+            }
+        }
 
-        return tracks;
+        return tracks.isEmpty() ? Collections.emptyList() : tracks;
     }
 
 }
