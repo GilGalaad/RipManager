@@ -6,6 +6,7 @@ import ripmanager.common.CommonUtils;
 import ripmanager.engine.Eac3toParser;
 import ripmanager.engine.dto.*;
 import ripmanager.engine.enums.AudioCodec;
+import ripmanager.engine.enums.Encoder;
 import ripmanager.engine.enums.Language;
 import ripmanager.gui.RipManagerImpl;
 
@@ -40,6 +41,7 @@ public class BackgroundWorker extends SwingWorker<WorkerOutcome, Void> {
     private final WorkerCommand command;
     private final String source;
     private final List<Track> tracks;
+    private final EncodingOptions encodingOptions;
     private final RipManagerImpl frame;
 
     // local variables
@@ -127,7 +129,6 @@ public class BackgroundWorker extends SwingWorker<WorkerOutcome, Void> {
             parsedTracks.add(track);
         }
 
-        parsedTracks.forEach(log::info);
         return new WorkerOutcome(WorkerOutcome.Status.OK, output.toString(), parsedTracks);
     }
 
@@ -171,7 +172,21 @@ public class BackgroundWorker extends SwingWorker<WorkerOutcome, Void> {
     }
 
     private WorkerOutcome doEncode() throws Exception {
-        List<String> args = Arrays.asList("python", "c:\\dvd-rip\\python\\encode.py");
+        List<String> args = new ArrayList<>();
+        args.add("python");
+        args.add("c:\\dvd-rip\\python\\encode.py");
+        args.add("-n");
+        if (encodingOptions.getCrf() != 18) {
+            args.add("--crf");
+            args.add(Integer.toString(encodingOptions.getCrf()));
+        }
+        if (!isEmpty(encodingOptions.getSuffix())) {
+            args.add("--suffix");
+            args.add(encodingOptions.getSuffix());
+        }
+        if (encodingOptions.getEncoder() != Encoder.AUTODETECT) {
+            args.add(encodingOptions.getEncoder().toString());
+        }
         ProcessOutcome outcome = runEncode(args);
         if (outcome.getExitCode() != 0) {
             return new WorkerOutcome(WorkerOutcome.Status.KO, output.toString(), null);

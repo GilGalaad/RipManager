@@ -3,13 +3,12 @@ package ripmanager.gui;
 import lombok.extern.log4j.Log4j2;
 import ripmanager.common.ExceptionUtils;
 import ripmanager.engine.dto.*;
+import ripmanager.engine.enums.Encoder;
 import ripmanager.worker.BackgroundWorker;
 import ripmanager.worker.WorkerOutcome;
 
 import javax.swing.*;
-import javax.swing.event.TreeExpansionEvent;
-import javax.swing.event.TreeSelectionEvent;
-import javax.swing.event.TreeWillExpandListener;
+import javax.swing.event.*;
 import javax.swing.tree.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -42,6 +41,7 @@ public class RipManagerImpl extends RipManager {
     private boolean running = false;
     private BackgroundWorker worker;
     private List<Track> tracks;
+    private final EncodingOptions encodingOptions = new EncodingOptions();
 
     public RipManagerImpl() {
         super();
@@ -59,7 +59,7 @@ public class RipManagerImpl extends RipManager {
         trackTree.setModel(null);
         trackTree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
         trackTree.addTreeWillExpandListener(createCustomTreeWillExpandListener());
-        trackTree.setCellRenderer(createCustomCellRenderer());
+        trackTree.setCellRenderer(createCustomTreeCellRenderer());
         trackTree.addMouseListener(createCustomMouseListener());
         trackTree.addTreeSelectionListener(this::nodeSelected);
 
@@ -70,6 +70,12 @@ public class RipManagerImpl extends RipManager {
         lossyRadioButton.addActionListener(this::demuxOptionChanged);
         normalizeCheckBox.addActionListener(this::demuxOptionChanged);
         extractCoreCheckBox.addActionListener(this::demuxOptionChanged);
+
+        encoderComboBox.setModel(new DefaultComboBoxModel<>(Encoder.values()));
+        encoderComboBox.addActionListener(this::encoderOptionChanged);
+        crfSlider.addChangeListener(this::crfOptionChanged);
+        suffixTextField.getDocument().addDocumentListener(createCustomDocumentListener());
+        y4mCheckBox.addActionListener(this::y4mOptionChanged);
     }
 
     public void startBackgroundTask() {
@@ -155,7 +161,7 @@ public class RipManagerImpl extends RipManager {
             outputTextArea.setText(null);
             clearDemuxOptions();
             // starting worker
-            worker = new BackgroundWorker(WorkerCommand.ANALYZE, sourceTextField.getText(), null, this);
+            worker = new BackgroundWorker(WorkerCommand.ANALYZE, sourceTextField.getText(), null, encodingOptions, this);
             worker.addPropertyChangeListener(this::workerPropertyChanged);
             worker.execute();
         } else {
@@ -183,7 +189,7 @@ public class RipManagerImpl extends RipManager {
             // clearing ui
             outputTextArea.setText(null);
             // starting worker
-            worker = new BackgroundWorker(WorkerCommand.PRINT_COMMANDS, sourceTextField.getText(), tracks, this);
+            worker = new BackgroundWorker(WorkerCommand.PRINT_COMMANDS, sourceTextField.getText(), tracks, encodingOptions, this);
             worker.addPropertyChangeListener(this::workerPropertyChanged);
             worker.execute();
         } else {
@@ -208,7 +214,7 @@ public class RipManagerImpl extends RipManager {
             // clearing ui
             outputTextArea.setText(null);
             // starting worker
-            worker = new BackgroundWorker(WorkerCommand.DEMUX, sourceTextField.getText(), tracks, this);
+            worker = new BackgroundWorker(WorkerCommand.DEMUX, sourceTextField.getText(), tracks, encodingOptions, this);
             worker.addPropertyChangeListener(this::workerPropertyChanged);
             worker.execute();
         } else {
@@ -233,7 +239,7 @@ public class RipManagerImpl extends RipManager {
             // clearing ui
             outputTextArea.setText(null);
             // starting worker
-            worker = new BackgroundWorker(WorkerCommand.ENCODE, sourceTextField.getText(), tracks, this);
+            worker = new BackgroundWorker(WorkerCommand.ENCODE, sourceTextField.getText(), tracks, encodingOptions, this);
             worker.addPropertyChangeListener(this::workerPropertyChanged);
             worker.execute();
         } else {
@@ -258,7 +264,7 @@ public class RipManagerImpl extends RipManager {
             // clearing ui
             outputTextArea.setText(null);
             // starting worker
-            worker = new BackgroundWorker(WorkerCommand.DEMUX_ENCODE, sourceTextField.getText(), tracks, this);
+            worker = new BackgroundWorker(WorkerCommand.DEMUX_ENCODE, sourceTextField.getText(), tracks, encodingOptions, this);
             worker.addPropertyChangeListener(this::workerPropertyChanged);
             worker.execute();
         } else {
@@ -324,7 +330,7 @@ public class RipManagerImpl extends RipManager {
     }
 
     // customization of tree rendering, with icon and calculated labels
-    private DefaultTreeCellRenderer createCustomCellRenderer() {
+    private DefaultTreeCellRenderer createCustomTreeCellRenderer() {
         return new DefaultTreeCellRenderer() {
             @Override
             public Component getTreeCellRendererComponent(JTree tree, Object value, boolean sel, boolean expanded, boolean leaf, int row, boolean hasFocus) {
@@ -564,7 +570,39 @@ public class RipManagerImpl extends RipManager {
         } else if (evt.getSource() == extractCoreCheckBox) {
             ((AudioTrack) userObject).getDemuxOptions().setExtractCore(((JCheckBox) evt.getSource()).isSelected());
         }
-        log.info(userObject);
+    }
+
+    private void encoderOptionChanged(ActionEvent evt) {
+        encodingOptions.setEncoder((Encoder) encoderComboBox.getSelectedItem());
+    }
+
+    private void crfOptionChanged(ChangeEvent evt) {
+        if (!crfSlider.getValueIsAdjusting()) {
+            encodingOptions.setCrf(crfSlider.getValue());
+        }
+    }
+
+    private DocumentListener createCustomDocumentListener() {
+        return new DocumentListener() {
+            @Override
+            public void insertUpdate(DocumentEvent e) {
+                encodingOptions.setSuffix(suffixTextField.getText());
+            }
+
+            @Override
+            public void removeUpdate(DocumentEvent e) {
+                encodingOptions.setSuffix(suffixTextField.getText());
+            }
+
+            @Override
+            public void changedUpdate(DocumentEvent e) {
+                encodingOptions.setSuffix(suffixTextField.getText());
+            }
+        };
+    }
+
+    private void y4mOptionChanged(ActionEvent evt) {
+        encodingOptions.setY4m(y4mCheckBox.isSelected());
     }
 
 }
