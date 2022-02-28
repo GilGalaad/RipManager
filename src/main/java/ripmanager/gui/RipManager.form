@@ -57,6 +57,8 @@
                       <Component id="analyzeButton" min="-2" pref="160" max="-2" attributes="0"/>
                       <EmptySpace type="unrelated" max="-2" attributes="0"/>
                       <Component id="printCommandsButton" min="-2" pref="160" max="-2" attributes="0"/>
+                      <EmptySpace type="unrelated" max="-2" attributes="0"/>
+                      <Component id="demuxButton" min="-2" pref="160" max="-2" attributes="0"/>
                       <EmptySpace min="0" pref="0" max="32767" attributes="0"/>
                   </Group>
               </Group>
@@ -80,6 +82,7 @@
                       <Group type="103" groupAlignment="3" attributes="0">
                           <Component id="analyzeButton" alignment="3" min="-2" max="-2" attributes="0"/>
                           <Component id="printCommandsButton" alignment="3" min="-2" max="-2" attributes="0"/>
+                          <Component id="demuxButton" alignment="3" min="-2" max="-2" attributes="0"/>
                       </Group>
                       <EmptySpace type="separate" max="-2" attributes="0"/>
                       <Group type="103" groupAlignment="0" attributes="0">
@@ -163,6 +166,7 @@
     <Component class="javax.swing.JLabel" name="etaLabel">
       <Properties>
         <Property name="horizontalAlignment" type="int" value="4"/>
+        <Property name="text" type="java.lang.String" value="ETA: 00:00:00"/>
       </Properties>
       <AuxValues>
         <AuxValue name="JavaCodeGenerator_VariableModifier" type="java.lang.Integer" value="4"/>
@@ -377,6 +381,15 @@
     <Component class="javax.swing.JButton" name="printCommandsButton">
       <Properties>
         <Property name="text" type="java.lang.String" value="Print Commands"/>
+        <Property name="enabled" type="boolean" value="false"/>
+      </Properties>
+      <AuxValues>
+        <AuxValue name="JavaCodeGenerator_VariableModifier" type="java.lang.Integer" value="4"/>
+      </AuxValues>
+    </Component>
+    <Component class="javax.swing.JButton" name="demuxButton">
+      <Properties>
+        <Property name="text" type="java.lang.String" value="Demux"/>
         <Property name="enabled" type="boolean" value="false"/>
       </Properties>
       <AuxValues>

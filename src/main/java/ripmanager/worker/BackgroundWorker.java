@@ -22,14 +22,16 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import static ripmanager.common.CommonUtils.calcEta;
+import static ripmanager.common.CommonUtils.*;
 
 @Log4j2
 @RequiredArgsConstructor
 public class BackgroundWorker extends SwingWorker<WorkerOutcome, Void> {
 
-    private static final Pattern EAC3TOPROGRESS_PATTERN = Pattern.compile("(analyze|process): (?<progress>\\d+)%");
+    private static final Pattern EAC3TO_PROGRESS_PATTERN = Pattern.compile("(analyze|process): (?<progress>\\d+)%");
     private static final Pattern MKVINFO_CHAPTERS_PATTERN = Pattern.compile("^\\|\\+ Chapters$", Pattern.MULTILINE);
+    private static final Pattern FFMPEG_DURATION_PATTERN = Pattern.compile("\\s+Duration:\\s+(?<duration>(\\d{2}:)+?(\\d{2}:)+?(\\d{2}.)+?\\d{2}),.*");
+    private static final Pattern FFMPEG_PROGRESS_PATTERN = Pattern.compile("frame=.+?fps=.+?q=.+?size=.+?time=(?<time>(\\d{2}:)+?(\\d{2}:)+?(\\d{2}.)+?\\d{2}).+?bitrate=.+");
 
     // class init params
     private final WorkerCommand command;
@@ -45,13 +47,14 @@ public class BackgroundWorker extends SwingWorker<WorkerOutcome, Void> {
         switch (command) {
             case ANALYZE:
                 return doAnalyze();
-            case PRINT_COMMANDS:
-                List<List<String>> commands = doPrintCommands();
-                List<String> lines = commands.stream().map(i -> String.join(" ", i)).collect(Collectors.toList());
-                String output = String.join(System.lineSeparator(), lines);
-                return new WorkerOutcome(WorkerOutcome.Status.OK, output, null);
+            case PRINT_COMMANDS: {
+                return doPrintCommands();
+            }
+            case DEMUX: {
+                return doDemux();
+            }
             default:
-                throw new UnsupportedOperationException();
+                throw new UnsupportedOperationException("Unsupported command: " + command);
         }
     }
 
@@ -63,26 +66,19 @@ public class BackgroundWorker extends SwingWorker<WorkerOutcome, Void> {
                 frame.analyzeTaskCallback(ret);
             } else if (command == WorkerCommand.PRINT_COMMANDS) {
                 frame.printCommandsTaskCallback(ret);
+            } else if (command == WorkerCommand.DEMUX) {
+                frame.demuxTaskCallback(ret);
             }
         } catch (CancellationException | InterruptedException ex) {
             frame.endBackgroundTask();
         } catch (ExecutionException ex) {
-            frame.exceptionTaskCallback(ex);
+            frame.exceptionTaskCallback(ex.getCause());
         }
     }
 
     private WorkerOutcome doAnalyze() throws Exception {
         // analyzing file with eac3to
-        List<String> args = new ArrayList<>();
-        if (command == WorkerCommand.DEMUX) {
-            args.add("python.exe");
-            args.add("c:\\dvd-rip\\python\\run_cmd.py");
-        }
-        args.add("eac3to.exe");
-        args.add(source);
-        args.add("-log=NUL");
-        args.add("-progressnumbers");
-
+        List<String> args = Arrays.asList("eac3to.exe", source, "-log=NUL", "-progressnumbers");
         ProcessOutcome eac3toOutcome = runEac3to(args);
         if (eac3toOutcome.getExitCode() != 0) {
             return new WorkerOutcome(WorkerOutcome.Status.KO, output.toString(), null);
@@ -100,7 +96,8 @@ public class BackgroundWorker extends SwingWorker<WorkerOutcome, Void> {
         }
         // otherwise, looking for chapters with mkvinfo
         output.append(System.lineSeparator());
-        ProcessOutcome mkvinfoOutcome = runMkvinfo();
+        args = Arrays.asList("mkvinfo.exe", source, "--ui-language", "en");
+        ProcessOutcome mkvinfoOutcome = runGenericProcess(args);
         if (mkvinfoOutcome.getExitCode() != 0) {
             return new WorkerOutcome(WorkerOutcome.Status.KO, output.toString(), null);
         }
@@ -115,7 +112,42 @@ public class BackgroundWorker extends SwingWorker<WorkerOutcome, Void> {
         return new WorkerOutcome(WorkerOutcome.Status.OK, output.toString(), parsedTracks);
     }
 
-    private List<List<String>> doPrintCommands() {
+    private WorkerOutcome doPrintCommands() {
+        List<List<String>> commands = doGenerateCommands();
+        List<String> lines = commands.stream().map(i -> String.join(" ", i)).collect(Collectors.toList());
+        for (var line : lines) {
+            output.append(line).append(System.lineSeparator());
+        }
+        return new WorkerOutcome(WorkerOutcome.Status.OK, output.toString(), null);
+    }
+
+    private WorkerOutcome doDemux() throws Exception {
+        List<List<String>> commands = doGenerateCommands();
+        for (var command : commands) {
+            ProcessOutcome outcome;
+            switch (command.get(0)) {
+                case "mkvextract.exe":
+                case "ffmsindex.exe":
+                    outcome = runGenericProcess(command);
+                    break;
+                case "eac3to.exe":
+                    outcome = runGenericProcess(Arrays.asList("ping", "localhost", "-n", "1"));
+                    break;
+                case "ffmpeg.exe":
+                    outcome = runFFmpeg(command);
+                    break;
+                default:
+                    throw new UnsupportedOperationException("Unsupported executable: " + command.get(0));
+            }
+            if (outcome.getExitCode() != 0) {
+                return new WorkerOutcome(WorkerOutcome.Status.KO, output.toString(), null);
+            }
+            output.append(System.lineSeparator());
+        }
+        return new WorkerOutcome(WorkerOutcome.Status.OK, output.toString(), null);
+    }
+
+    private List<List<String>> doGenerateCommands() {
         List<List<String>> ret = new ArrayList<>();
         List<String> eac3to = new ArrayList<>();
         eac3to.add("eac3to.exe");
@@ -186,8 +218,10 @@ public class BackgroundWorker extends SwingWorker<WorkerOutcome, Void> {
         // adding ffmpeg at the end
         ret.addAll(ffmmpeg);
 
-        // finishing with an empty line
-        ret.add(Arrays.asList("", System.lineSeparator()));
+        // ip printing commands, finishing with an empty line
+        if (command == WorkerCommand.PRINT_COMMANDS) {
+            ret.add(Arrays.asList("", System.lineSeparator()));
+        }
         return ret;
     }
 
@@ -195,6 +229,9 @@ public class BackgroundWorker extends SwingWorker<WorkerOutcome, Void> {
         log.info("Running: {}", String.join(" ", args));
         output.append("Running: ").append(String.join(" ", args)).append(System.lineSeparator());
         firePropertyChange("output", null, output.toString());
+
+        args = wrapCommand(args);
+        log.info("Actual command line: {}", String.join(" ", args));
 
         StringBuilder stdout = new StringBuilder();
         ProcessBuilder pb = new ProcessBuilder(args.toArray(new String[0]));
@@ -210,18 +247,18 @@ public class BackgroundWorker extends SwingWorker<WorkerOutcome, Void> {
                     p.descendants().forEachOrdered(ProcessHandle::destroyForcibly);
                     throw new RuntimeException();
                 }
-                Matcher m = EAC3TOPROGRESS_PATTERN.matcher(line);
+                Matcher m = EAC3TO_PROGRESS_PATTERN.matcher(line);
                 if (m.matches()) {
                     if (command == WorkerCommand.ANALYZE || line.contains("process")) {
                         int progress = Integer.parseInt(m.group("progress"));
                         setProgress(Math.min(progress, 100));
+                        firePropertyChange("eta", null, calcEta(startTime, progress));
                     }
                 } else {
                     output.append(CommonUtils.rtrim(line)).append(System.lineSeparator());
                     stdout.append(CommonUtils.rtrim(line)).append(System.lineSeparator());
                     firePropertyChange("output", null, output.toString());
                 }
-                firePropertyChange("eta", null, calcEta(startTime, getProgress()));
             }
         }
         p.waitFor();
@@ -233,13 +270,68 @@ public class BackgroundWorker extends SwingWorker<WorkerOutcome, Void> {
         return new ProcessOutcome(p.exitValue(), stdout.toString());
     }
 
-    private ProcessOutcome runMkvinfo() throws Exception {
-        List<String> args = new ArrayList<>();
-        args.add("mkvinfo.exe");
-        args.add(source);
-        args.add("--ui-language");
-        args.add("en");
+    private ProcessOutcome runFFmpeg(List<String> args) throws Exception {
+        log.info("Running: {}", String.join(" ", args));
+        output.append("Running: ").append(String.join(" ", args)).append(System.lineSeparator());
+        firePropertyChange("output", null, output.toString());
 
+        args = wrapCommand(args);
+        log.info("Actual command line: {}", String.join(" ", args));
+
+        StringBuilder stdout = new StringBuilder();
+        long duration = 0;
+        ProcessBuilder pb = new ProcessBuilder(args.toArray(new String[0]));
+        pb.directory(new File("d:\\iso"));
+        pb.redirectErrorStream(true);
+        long startTime = System.nanoTime();
+        Process p = pb.start();
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                if (isCancelled()) {
+                    log.info("Cancelling execution and killing children processes");
+                    p.descendants().forEachOrdered(ProcessHandle::destroyForcibly);
+                    throw new RuntimeException();
+                }
+                Matcher m = FFMPEG_DURATION_PATTERN.matcher(line);
+                if (m.matches()) {
+                    duration = parseInterval(m.group("duration"));
+                    output.append(line.trim()).append(System.lineSeparator());
+                    stdout.append(line.trim()).append(System.lineSeparator());
+                    firePropertyChange("output", null, output.toString());
+                    continue;
+                }
+                m = FFMPEG_PROGRESS_PATTERN.matcher(line);
+                if (m.matches()) {
+                    long currentTime = parseInterval(m.group("time"));
+                    if (duration != 0) {
+                        int progress = calcPercent(currentTime, duration);
+                        if (progress != getProgress()) {
+                            setProgress(Math.min(progress, 100));
+                            firePropertyChange("eta", null, calcEta(startTime, getProgress()));
+                        }
+                    }
+                    removeLastOuputLine();
+                    output.append(line.trim()).append(System.lineSeparator());
+                    stdout.append(line.trim()).append(System.lineSeparator());
+                    firePropertyChange("output", null, output.toString());
+                } else if (line.contains("muxing overhead:")) {
+                    output.append(line.trim()).append(System.lineSeparator());
+                    stdout.append(line.trim()).append(System.lineSeparator());
+                    firePropertyChange("output", null, output.toString());
+                }
+            }
+        }
+        p.waitFor();
+
+        log.info("Process finished with exit code: {}", p.exitValue());
+        output.append("Process finished with exit code: ").append(p.exitValue()).append(System.lineSeparator());
+        firePropertyChange("output", null, output.toString());
+
+        return new ProcessOutcome(p.exitValue(), stdout.toString());
+    }
+
+    private ProcessOutcome runGenericProcess(List<String> args) throws Exception {
         log.info("Running: {}", String.join(" ", args));
         output.append("Running: ").append(String.join(" ", args)).append(System.lineSeparator());
         firePropertyChange("output", null, output.toString());
@@ -268,6 +360,19 @@ public class BackgroundWorker extends SwingWorker<WorkerOutcome, Void> {
         firePropertyChange("output", null, output.toString());
 
         return new ProcessOutcome(p.exitValue(), stdout.toString());
+    }
+
+    private List<String> wrapCommand(List<String> args) {
+        List<String> wrappedArgs = new ArrayList<>(args.size() + 2);
+        wrappedArgs.add("python.exe");
+        wrappedArgs.add("C:\\dvd-rip\\python\\run_cmd.py");
+        wrappedArgs.addAll(args);
+        return wrappedArgs;
+    }
+
+    private void removeLastOuputLine() {
+        output.setLength(output.lastIndexOf(System.lineSeparator()));
+        output.setLength(output.lastIndexOf(System.lineSeparator()) + System.lineSeparator().length());
     }
 
 }

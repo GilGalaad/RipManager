@@ -31,6 +31,7 @@ public class RipManager extends javax.swing.JFrame {
         extractCoreCheckBox = new javax.swing.JCheckBox();
         normalizeCheckBox = new javax.swing.JCheckBox();
         printCommandsButton = new javax.swing.JButton();
+        demuxButton = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setTitle("RipManager");
@@ -50,6 +51,7 @@ public class RipManager extends javax.swing.JFrame {
         progressBar.setStringPainted(true);
 
         etaLabel.setHorizontalAlignment(javax.swing.SwingConstants.RIGHT);
+        etaLabel.setText("ETA: 00:00:00");
 
         treeScrollPane.setViewportView(trackTree);
 
@@ -150,6 +152,9 @@ public class RipManager extends javax.swing.JFrame {
         printCommandsButton.setText("Print Commands");
         printCommandsButton.setEnabled(false);
 
+        demuxButton.setText("Demux");
+        demuxButton.setEnabled(false);
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
@@ -176,6 +181,8 @@ public class RipManager extends javax.swing.JFrame {
                                                 .addComponent(analyzeButton, javax.swing.GroupLayout.PREFERRED_SIZE, 160, javax.swing.GroupLayout.PREFERRED_SIZE)
                                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                                                 .addComponent(printCommandsButton, javax.swing.GroupLayout.PREFERRED_SIZE, 160, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                                                .addComponent(demuxButton, javax.swing.GroupLayout.PREFERRED_SIZE, 160, javax.swing.GroupLayout.PREFERRED_SIZE)
                                                 .addGap(0, 0, Short.MAX_VALUE)))
                                 .addGap(18, 18, 18)
                                 .addComponent(outputScrollPane, javax.swing.GroupLayout.DEFAULT_SIZE, 981, Short.MAX_VALUE)
@@ -193,7 +200,8 @@ public class RipManager extends javax.swing.JFrame {
                                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                                                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                                                         .addComponent(analyzeButton)
-                                                        .addComponent(printCommandsButton))
+                                                        .addComponent(printCommandsButton)
+                                                        .addComponent(demuxButton))
                                                 .addGap(18, 18, 18)
                                                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                                                         .addComponent(treeScrollPane)
@@ -220,6 +228,7 @@ public class RipManager extends javax.swing.JFrame {
     protected javax.swing.ButtonGroup audioDemuxButtonGroup;
     protected javax.swing.JPanel audioDemuxOptionsPanel;
     protected javax.swing.JCheckBox convertToHuffCheckBox;
+    protected javax.swing.JButton demuxButton;
     protected javax.swing.JLabel etaLabel;
     protected javax.swing.JCheckBox extractCoreCheckBox;
     protected javax.swing.JPanel generalDemuxOptionsPanel;
