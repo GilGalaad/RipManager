@@ -266,8 +266,8 @@ public class BackgroundWorker extends SwingWorker<WorkerOutcome, Void> {
         p.waitFor();
         long endTime = System.nanoTime();
 
-        log.info("Process finished with exit code: {} after {}", p.exitValue(), smartElapsed(endTime - startTime));
-        output.append(String.format("Process finished with exit code: %s after %s", p.exitValue(), smartElapsed(endTime - startTime))).append(System.lineSeparator());
+        log.info("Process completed with exit code: {} after {}", p.exitValue(), smartElapsed(endTime - startTime));
+        output.append(String.format("Process completed with exit code: %s after %s", p.exitValue(), smartElapsed(endTime - startTime))).append(System.lineSeparator());
         firePropertyChange("output", null, output.toString());
 
         return new ProcessOutcome(p.exitValue(), stdout.toString());
@@ -332,8 +332,8 @@ public class BackgroundWorker extends SwingWorker<WorkerOutcome, Void> {
         p.waitFor();
         long endTime = System.nanoTime();
 
-        log.info("Process finished with exit code: {} after {}", p.exitValue(), smartElapsed(endTime - startTime));
-        output.append(String.format("Process finished with exit code: %s after %s", p.exitValue(), smartElapsed(endTime - startTime))).append(System.lineSeparator());
+        log.info("Process completed with exit code: {} after {}", p.exitValue(), smartElapsed(endTime - startTime));
+        output.append(String.format("Process completed with exit code: %s after %s", p.exitValue(), smartElapsed(endTime - startTime))).append(System.lineSeparator());
         firePropertyChange("output", null, output.toString());
 
         return new ProcessOutcome(p.exitValue(), stdout.toString());
@@ -378,8 +378,8 @@ public class BackgroundWorker extends SwingWorker<WorkerOutcome, Void> {
         p.waitFor();
         long endTime = System.nanoTime();
 
-        log.info("Process finished with exit code: {} after {}", p.exitValue(), smartElapsed(endTime - startTime));
-        output.append(String.format("Process finished with exit code: %s after %s", p.exitValue(), smartElapsed(endTime - startTime))).append(System.lineSeparator());
+        log.info("Process completed with exit code: {} after {}", p.exitValue(), smartElapsed(endTime - startTime));
+        output.append(String.format("Process completed with exit code: %s after %s", p.exitValue(), smartElapsed(endTime - startTime))).append(System.lineSeparator());
         firePropertyChange("output", null, output.toString());
 
         return new ProcessOutcome(p.exitValue(), stdout.toString());
@@ -411,8 +411,8 @@ public class BackgroundWorker extends SwingWorker<WorkerOutcome, Void> {
         p.waitFor();
         long endTime = System.nanoTime();
 
-        log.info("Process finished with exit code: {} after {}", p.exitValue(), smartElapsed(endTime - startTime));
-        output.append(String.format("Process finished with exit code: %s after %s", p.exitValue(), smartElapsed(endTime - startTime))).append(System.lineSeparator());
+        log.info("Process completed with exit code: {} after {}", p.exitValue(), smartElapsed(endTime - startTime));
+        output.append(String.format("Process completed with exit code: %s after %s", p.exitValue(), smartElapsed(endTime - startTime))).append(System.lineSeparator());
         firePropertyChange("output", null, output.toString());
 
         return new ProcessOutcome(p.exitValue(), stdout.toString());

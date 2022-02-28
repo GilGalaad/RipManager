@@ -158,7 +158,7 @@ public class RipManagerImpl extends RipManager {
     public void analyzeTaskCallback(WorkerOutcome outcome) {
         outputTextArea.setText(outcome.getOutput());
         if (outcome.getStatus() != WorkerOutcome.Status.OK) {
-            JOptionPane.showMessageDialog(this, "Process finished with errors", "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Process completed with errors", "Error", JOptionPane.ERROR_MESSAGE);
             return;
         }
         tracks = outcome.getTracks();
@@ -187,7 +187,7 @@ public class RipManagerImpl extends RipManager {
         endBackgroundTask();
         outputTextArea.setText(outcome.getOutput());
         if (outcome.getStatus() != WorkerOutcome.Status.OK) {
-            JOptionPane.showMessageDialog(this, "Process finished with errors", "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Process completed with errors", "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -212,7 +212,7 @@ public class RipManagerImpl extends RipManager {
         endBackgroundTask();
         outputTextArea.setText(outcome.getOutput());
         if (outcome.getStatus() != WorkerOutcome.Status.OK) {
-            JOptionPane.showMessageDialog(this, "Process finished with errors", "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Process completed with errors", "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
