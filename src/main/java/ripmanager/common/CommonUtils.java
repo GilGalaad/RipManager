@@ -62,7 +62,7 @@ public class CommonUtils {
     }
 
     public static String smartElapsed(long elapsedNano) {
-        return smartElapsed(elapsedNano, 2);
+        return smartElapsed(elapsedNano, 1);
     }
 
     public static String smartElapsed(long elapsedNano, int scale) {
