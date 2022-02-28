@@ -233,7 +233,7 @@ public class RipManager extends javax.swing.JFrame {
                                 .addGroup(encodingOptionsPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                                         .addComponent(y4mLabel)
                                         .addComponent(y4mCheckBox))
-                                .addContainerGap(188, Short.MAX_VALUE))
+                                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());

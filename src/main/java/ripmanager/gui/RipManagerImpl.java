@@ -90,6 +90,7 @@ public class RipManagerImpl extends RipManager {
         progressBar.setValue(0);
         etaLabel.setText(ETA_DEFAULT);
         disableDemuxOptions();
+        disableEncodingOptions();
     }
 
     public void endBackgroundTask() {
@@ -109,6 +110,7 @@ public class RipManagerImpl extends RipManager {
         progressBar.setValue(0);
         etaLabel.setText(ETA_DEFAULT);
         configureDemuxOptions();
+        enableEncodingOptions();
     }
 
     private void sourceButtonClicked() {
@@ -460,6 +462,20 @@ public class RipManagerImpl extends RipManager {
         lossyRadioButton.setEnabled(false);
         normalizeCheckBox.setEnabled(false);
         extractCoreCheckBox.setEnabled(false);
+    }
+
+    private void disableEncodingOptions() {
+        encoderComboBox.setEnabled(false);
+        crfSlider.setEnabled(false);
+        suffixTextField.setEnabled(false);
+        y4mCheckBox.setEnabled(false);
+    }
+
+    private void enableEncodingOptions() {
+        encoderComboBox.setEnabled(true);
+        crfSlider.setEnabled(true);
+        suffixTextField.setEnabled(true);
+        y4mCheckBox.setEnabled(true);
     }
 
     // called when worker ends to re-enable demux options based on eventual selected node
