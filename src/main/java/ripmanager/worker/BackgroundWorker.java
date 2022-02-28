@@ -136,6 +136,7 @@ public class BackgroundWorker extends SwingWorker<WorkerOutcome, Void> {
                     break;
                 case "ffmpeg":
                     outcome = runFFmpeg(command);
+                    //outcome = runGenericProcess(Arrays.asList("ping", "localhost", "-n", "1"));
                     break;
                 case "ffmsindex":
                     outcome = runFFMSindex(command);
@@ -212,11 +213,7 @@ public class BackgroundWorker extends SwingWorker<WorkerOutcome, Void> {
                 eac3to.add(String.format("%s:audio.%s.%s.orig.%s", index, lang.getCode(), index, codec.getOriginalExtension()));
             }
         }
-
         eac3to.add("-log=NUL");
-        if (command != WorkerCommand.PRINT_COMMANDS) {
-            eac3to.add("-progressnumbers");
-        }
         ret.add(eac3to);
 
         // adding ffmpeg at the end
@@ -235,6 +232,7 @@ public class BackgroundWorker extends SwingWorker<WorkerOutcome, Void> {
         firePropertyChange("output", null, output.toString());
 
         args = wrapCommand(args);
+        args.add("-progressnumbers");
         log.info("Actual command line: {}", String.join(" ", args));
 
         StringBuilder stdout = new StringBuilder();
@@ -368,7 +366,9 @@ public class BackgroundWorker extends SwingWorker<WorkerOutcome, Void> {
                     int progress = Integer.parseInt(m.group("progress"));
                     setProgress(Math.min(progress, 100));
                     firePropertyChange("eta", null, calcEta(startTime, progress));
-                    continue;
+                }
+                if (getLastOutputLine().startsWith("Indexing")) {
+                    removeLastOuputLine();
                 }
                 output.append(line.trim()).append(System.lineSeparator());
                 stdout.append(line.trim()).append(System.lineSeparator());
