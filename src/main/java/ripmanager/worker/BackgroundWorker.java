@@ -33,6 +33,8 @@ public class BackgroundWorker extends SwingWorker<WorkerOutcome, Void> {
     private static final Pattern FFMPEG_DURATION_PATTERN = Pattern.compile("\\s*Duration:\\s+(?<duration>(\\d{2}:)+?(\\d{2}:)+?(\\d{2}.)+?\\d{2}),.*");
     private static final Pattern FFMPEG_TIME_PATTERN = Pattern.compile("frame=.+?fps=.+?q=.+?size=.+?time=(?<time>(\\d{2}:)+?(\\d{2}:)+?(\\d{2}.)+?\\d{2}).+?bitrate=.+");
     private static final Pattern FFMSINDEX_PROGRESS_PATTERN = Pattern.compile("Indexing, please wait\\.{3}\\s*(?<progress>\\d{1,3})%\\s*");
+    private static final Pattern ENCODE_TOTALFRAMES_PATTERN = Pattern.compile("Detected length: (?<frames>\\d+) frames");
+    private static final Pattern ENCODE_PROGRESS_PATTERN = Pattern.compile("(?<frames>\\d+) frames:.*");
 
     // class init params
     private final WorkerCommand command;
@@ -48,12 +50,14 @@ public class BackgroundWorker extends SwingWorker<WorkerOutcome, Void> {
         switch (command) {
             case ANALYZE:
                 return doAnalyze();
-            case PRINT_COMMANDS: {
+            case PRINT_COMMANDS:
                 return doPrintCommands();
-            }
-            case DEMUX: {
+            case DEMUX:
                 return doDemux();
-            }
+            case ENCODE:
+                return doEncode();
+            case DEMUX_ENCODE:
+                return doDemuxEncode();
             default:
                 throw new UnsupportedOperationException("Unsupported command: " + command);
         }
@@ -63,30 +67,44 @@ public class BackgroundWorker extends SwingWorker<WorkerOutcome, Void> {
     protected void done() {
         try {
             WorkerOutcome ret = get();
-            if (command == WorkerCommand.ANALYZE) {
-                frame.analyzeTaskCallback(ret);
-            } else if (command == WorkerCommand.PRINT_COMMANDS) {
-                frame.printCommandsTaskCallback(ret);
-            } else if (command == WorkerCommand.DEMUX) {
-                frame.demuxTaskCallback(ret);
+            switch (command) {
+                case ANALYZE:
+                    frame.analyzeTaskCallback(ret);
+                    break;
+                case PRINT_COMMANDS:
+                    frame.printCommandsTaskCallback(ret);
+                    break;
+                case DEMUX:
+                    frame.demuxTaskCallback(ret);
+                    break;
+                case ENCODE:
+                    frame.encodeTaskCallback(ret);
+                    break;
+                case DEMUX_ENCODE:
+                    frame.demuxEncodeTaskCallback(ret);
+                    break;
+                default:
+                    throw new UnsupportedOperationException("Unsupported command: " + command);
             }
         } catch (CancellationException | InterruptedException ex) {
             frame.endBackgroundTask();
         } catch (ExecutionException ex) {
             frame.exceptionTaskCallback(ex.getCause());
+        } catch (Exception ex) {
+            frame.exceptionTaskCallback(ex);
         }
     }
 
     private WorkerOutcome doAnalyze() throws Exception {
         // analyzing file with eac3to
         List<String> args = Arrays.asList("eac3to", source, "-log=NUL", "-progressnumbers");
-        ProcessOutcome eac3toOutcome = runEac3to(args);
-        if (eac3toOutcome.getExitCode() != 0) {
+        ProcessOutcome outcome = runEac3to(args);
+        if (outcome.getExitCode() != 0) {
             return new WorkerOutcome(WorkerOutcome.Status.KO, output.toString(), null);
         }
 
         // parsing output
-        List<Track> parsedTracks = Eac3toParser.parse(eac3toOutcome.getStdout());
+        List<Track> parsedTracks = Eac3toParser.parse(outcome.getStdout());
         if (parsedTracks.isEmpty()) {
             return new WorkerOutcome(WorkerOutcome.Status.KO, output.toString(), parsedTracks);
         }
@@ -98,11 +116,11 @@ public class BackgroundWorker extends SwingWorker<WorkerOutcome, Void> {
         // otherwise, looking for chapters with mkvinfo
         output.append(System.lineSeparator());
         args = Arrays.asList("mkvinfo", source, "--ui-language", "en");
-        ProcessOutcome mkvinfoOutcome = runGenericProcess(args);
-        if (mkvinfoOutcome.getExitCode() != 0) {
+        outcome = runGenericProcess(args);
+        if (outcome.getExitCode() != 0) {
             return new WorkerOutcome(WorkerOutcome.Status.KO, output.toString(), null);
         }
-        if (MKVINFO_CHAPTERS_PATTERN.matcher(mkvinfoOutcome.getStdout()).find()) {
+        if (MKVINFO_CHAPTERS_PATTERN.matcher(outcome.getStdout()).find()) {
             ChaptersTrack track = new ChaptersTrack(parsedTracks.stream().mapToInt(Track::getIndex).max().orElse(0) + 1, "Chapters");
             track.setProperties(new ChaptersProperties(true));
             track.setDemuxOptions(new DemuxOptions(true));
@@ -114,7 +132,7 @@ public class BackgroundWorker extends SwingWorker<WorkerOutcome, Void> {
     }
 
     private WorkerOutcome doPrintCommands() {
-        List<List<String>> commands = doGenerateCommands();
+        List<List<String>> commands = generateCommands();
         List<String> lines = commands.stream().map(i -> String.join(" ", i)).collect(Collectors.toList());
         for (var line : lines) {
             output.append(line).append(System.lineSeparator());
@@ -123,7 +141,7 @@ public class BackgroundWorker extends SwingWorker<WorkerOutcome, Void> {
     }
 
     private WorkerOutcome doDemux() throws Exception {
-        List<List<String>> commands = doGenerateCommands();
+        List<List<String>> commands = generateCommands();
         for (var command : commands) {
             ProcessOutcome outcome;
             switch (command.get(0)) {
@@ -152,7 +170,25 @@ public class BackgroundWorker extends SwingWorker<WorkerOutcome, Void> {
         return new WorkerOutcome(WorkerOutcome.Status.OK, output.toString(), null);
     }
 
-    private List<List<String>> doGenerateCommands() {
+    private WorkerOutcome doEncode() throws Exception {
+        List<String> args = Arrays.asList("python", "c:\\dvd-rip\\python\\encode.py");
+        ProcessOutcome outcome = runEncode(args);
+        if (outcome.getExitCode() != 0) {
+            return new WorkerOutcome(WorkerOutcome.Status.KO, output.toString(), null);
+        }
+        return new WorkerOutcome(WorkerOutcome.Status.OK, output.toString(), null);
+    }
+
+    private WorkerOutcome doDemuxEncode() throws Exception {
+        WorkerOutcome outcome = doDemux();
+        if (outcome.getStatus() == WorkerOutcome.Status.KO) {
+            return outcome;
+        }
+        output.append(System.lineSeparator());
+        return doEncode();
+    }
+
+    private List<List<String>> generateCommands() {
         List<List<String>> ret = new ArrayList<>();
         List<String> eac3to = new ArrayList<>();
         eac3to.add("eac3to");
@@ -368,6 +404,63 @@ public class BackgroundWorker extends SwingWorker<WorkerOutcome, Void> {
                     firePropertyChange("eta", null, calcEta(startTime, progress));
                 }
                 if (getLastOutputLine().startsWith("Indexing")) {
+                    removeLastOuputLine();
+                }
+                output.append(line.trim()).append(System.lineSeparator());
+                stdout.append(line.trim()).append(System.lineSeparator());
+                firePropertyChange("output", null, output.toString());
+            }
+        }
+        p.waitFor();
+        long endTime = System.nanoTime();
+
+        log.info("Process completed with exit code: {} after {}", p.exitValue(), smartElapsed(endTime - startTime));
+        output.append(String.format("Process completed with exit code: %s after %s", p.exitValue(), smartElapsed(endTime - startTime))).append(System.lineSeparator());
+        firePropertyChange("output", null, output.toString());
+
+        return new ProcessOutcome(p.exitValue(), stdout.toString());
+    }
+
+    private ProcessOutcome runEncode(List<String> args) throws Exception {
+        log.info("Running: {}", String.join(" ", args));
+        output.append("Running: ").append(String.join(" ", args)).append(System.lineSeparator());
+        firePropertyChange("output", null, output.toString());
+
+        StringBuilder stdout = new StringBuilder();
+        long totalFrames = 0;
+        ProcessBuilder pb = new ProcessBuilder(args.toArray(new String[0]));
+        pb.directory(new File("d:\\iso"));
+        pb.redirectErrorStream(true);
+        long startTime = System.nanoTime();
+        Process p = pb.start();
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                if (isCancelled()) {
+                    log.info("Cancelling execution and killing children processes");
+                    p.descendants().forEachOrdered(ProcessHandle::destroyForcibly);
+                    throw new RuntimeException();
+                }
+                Matcher m = ENCODE_TOTALFRAMES_PATTERN.matcher(line);
+                if (m.matches()) {
+                    totalFrames = Long.parseLong(m.group("frames"));
+                }
+                m = ENCODE_PROGRESS_PATTERN.matcher(line);
+                if (m.matches()) {
+                    long currentFrames = Long.parseLong(m.group("frames"));
+                    if (totalFrames != 0) {
+                        int progress = calcPercent(currentFrames, totalFrames);
+                        if (progress != getProgress()) {
+                            setProgress(Math.min(progress, 100));
+                            firePropertyChange("eta", null, calcEta(startTime, getProgress()));
+                        }
+                    }
+                }
+                if (getLastOutputLine().contains("frames") && getLastOutputLine().contains("fps") && getLastOutputLine().contains("kb/s")) {
+                    // there is an unwanted empty line at the end of the encoding, when we actually want to delete the last progress line
+                    if (isEmpty(line)) {
+                        continue;
+                    }
                     removeLastOuputLine();
                 }
                 output.append(line.trim()).append(System.lineSeparator());

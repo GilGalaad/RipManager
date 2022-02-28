@@ -4,5 +4,6 @@ public enum WorkerCommand {
     ANALYZE,
     PRINT_COMMANDS,
     DEMUX,
-    ENCODE
+    ENCODE,
+    DEMUX_ENCODE
 }

@@ -53,6 +53,8 @@ public class RipManagerImpl extends RipManager {
         analyzeButton.addActionListener(evt -> analyzeButtonClicked());
         printCommandsButton.addActionListener(evt -> printCommandsButtonClicked());
         demuxButton.addActionListener(evt -> demuxButtonClicked());
+        encodeButton.addActionListener(evt -> encodeButtonClicked());
+        demuxEncodeButton.addActionListener(evt -> demuxEncodeButtonClicked());
 
         trackTree.setModel(null);
         trackTree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
@@ -76,6 +78,8 @@ public class RipManagerImpl extends RipManager {
         analyzeButton.setEnabled(false);
         printCommandsButton.setEnabled(false);
         demuxButton.setEnabled(false);
+        encodeButton.setEnabled(false);
+        demuxEncodeButton.setEnabled(false);
         trackTree.setEnabled(false);
         progressBar.setValue(0);
         etaLabel.setText(ETA_DEFAULT);
@@ -88,9 +92,13 @@ public class RipManagerImpl extends RipManager {
         analyzeButton.setEnabled(true);
         printCommandsButton.setEnabled(tracks != null && !tracks.isEmpty());
         demuxButton.setEnabled(tracks != null && !tracks.isEmpty());
+        encodeButton.setEnabled(true);
+        demuxEncodeButton.setEnabled(tracks != null && !tracks.isEmpty());
         analyzeButton.setText("Analyze");
         printCommandsButton.setText("Print Commands");
         demuxButton.setText("Demux");
+        encodeButton.setText("Encode");
+        demuxEncodeButton.setText("Demux & Encode");
         trackTree.setEnabled(true);
         progressBar.setValue(0);
         etaLabel.setText(ETA_DEFAULT);
@@ -216,10 +224,59 @@ public class RipManagerImpl extends RipManager {
         }
     }
 
+    public void encodeButtonClicked() {
+        if (!running) {
+            startBackgroundTask();
+            // mutating button
+            encodeButton.setText("Abort");
+            encodeButton.setEnabled(true);
+            // clearing ui
+            outputTextArea.setText(null);
+            // starting worker
+            worker = new BackgroundWorker(WorkerCommand.ENCODE, sourceTextField.getText(), tracks, this);
+            worker.addPropertyChangeListener(this::workerPropertyChanged);
+            worker.execute();
+        } else {
+            worker.cancel(true);
+        }
+    }
+
+    public void encodeTaskCallback(WorkerOutcome outcome) {
+        endBackgroundTask();
+        outputTextArea.setText(outcome.getOutput());
+        if (outcome.getStatus() != WorkerOutcome.Status.OK) {
+            JOptionPane.showMessageDialog(this, "Process completed with errors", "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    public void demuxEncodeButtonClicked() {
+        if (!running) {
+            startBackgroundTask();
+            // mutating button
+            demuxEncodeButton.setText("Abort");
+            demuxEncodeButton.setEnabled(true);
+            // clearing ui
+            outputTextArea.setText(null);
+            // starting worker
+            worker = new BackgroundWorker(WorkerCommand.DEMUX_ENCODE, sourceTextField.getText(), tracks, this);
+            worker.addPropertyChangeListener(this::workerPropertyChanged);
+            worker.execute();
+        } else {
+            worker.cancel(true);
+        }
+    }
+
+    public void demuxEncodeTaskCallback(WorkerOutcome outcome) {
+        endBackgroundTask();
+        outputTextArea.setText(outcome.getOutput());
+        if (outcome.getStatus() != WorkerOutcome.Status.OK) {
+            JOptionPane.showMessageDialog(this, "Process completed with errors", "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
     public void exceptionTaskCallback(Throwable ex) {
         endBackgroundTask();
         outputTextArea.setText(ExceptionUtils.getCanonicalFormWithStackTrace(ex));
-        //JOptionPane.showMessageDialog(this, ExceptionUtils.getCanonicalForm(ExceptionUtils.getRootCause(ex)), "Exception", JOptionPane.ERROR_MESSAGE);
         JOptionPane.showMessageDialog(this, ExceptionUtils.getCanonicalForm(ex), "Exception", JOptionPane.ERROR_MESSAGE);
     }
 
