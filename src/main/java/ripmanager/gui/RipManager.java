@@ -147,6 +147,7 @@ public class RipManager extends javax.swing.JFrame {
         );
 
         printCommandsButton.setText("Print Commands");
+        printCommandsButton.setEnabled(false);
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);

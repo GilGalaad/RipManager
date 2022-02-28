@@ -376,6 +376,7 @@
     <Component class="javax.swing.JButton" name="printCommandsButton">
       <Properties>
         <Property name="text" type="java.lang.String" value="Print Commands"/>
+        <Property name="enabled" type="boolean" value="false"/>
       </Properties>
       <AuxValues>
         <AuxValue name="JavaCodeGenerator_VariableModifier" type="java.lang.Integer" value="4"/>

@@ -51,6 +51,7 @@ public class RipManagerImpl extends RipManager {
 
         sourceButton.addActionListener(evt -> sourceButtonClicked());
         analyzeButton.addActionListener(evt -> analyzeButtonClicked());
+        printCommandsButton.addActionListener(evt -> printCommandsButtonClicked());
 
         trackTree.setModel(null);
         trackTree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
@@ -85,8 +86,8 @@ public class RipManagerImpl extends RipManager {
         running = false;
         sourceButton.setEnabled(true);
         analyzeButton.setEnabled(true);
+        printCommandsButton.setEnabled(tracks != null && !tracks.isEmpty());
         analyzeButton.setText("Analyze");
-        printCommandsButton.setEnabled(true);
         printCommandsButton.setText("Print Commands");
         trackTree.setEnabled(true);
         progressBar.setValue(0);
@@ -108,6 +109,11 @@ public class RipManagerImpl extends RipManager {
         if (ret == JFileChooser.APPROVE_OPTION) {
             File selectedDir = fc.getSelectedFile();
             sourceTextField.setText(selectedDir.toString());
+            // clear ui for changed input file
+            tracks = null;
+            trackTree.setModel(null);
+            outputTextArea.setText(null);
+            clearDemuxOptions();
         }
     }
 
@@ -134,6 +140,7 @@ public class RipManagerImpl extends RipManager {
             analyzeButton.setText("Abort");
             analyzeButton.setEnabled(true);
             // clearing ui
+            tracks = null;
             trackTree.setModel(null);
             outputTextArea.setText(null);
             clearDemuxOptions();
@@ -147,7 +154,6 @@ public class RipManagerImpl extends RipManager {
     }
 
     public void analyzeTaskCallback(WorkerOutcome outcome) {
-        endBackgroundTask();
         outputTextArea.setText(outcome.getOutput());
         if (outcome.getStatus() != WorkerOutcome.Status.OK) {
             JOptionPane.showMessageDialog(this, "Process finished with errors", "Error", JOptionPane.ERROR_MESSAGE);
@@ -155,9 +161,36 @@ public class RipManagerImpl extends RipManager {
         }
         tracks = outcome.getTracks();
         populateTree();
+        endBackgroundTask();
     }
 
-    public void analyzeTaskCallback(Exception ex) {
+    public void printCommandsButtonClicked() {
+        if (!running) {
+            startBackgroundTask();
+            // mutating button
+            printCommandsButton.setText("Abort");
+            printCommandsButton.setEnabled(true);
+            // clearing ui
+            outputTextArea.setText(null);
+            // starting worker
+            worker = new BackgroundWorker(WorkerCommand.PRINT_COMMANDS, sourceTextField.getText(), tracks, this);
+            worker.addPropertyChangeListener(this::workerPropertyChanged);
+            worker.execute();
+        } else {
+            worker.cancel(true);
+        }
+    }
+
+    public void printCommandsTaskCallback(WorkerOutcome outcome) {
+        endBackgroundTask();
+        outputTextArea.setText(outcome.getOutput());
+        if (outcome.getStatus() != WorkerOutcome.Status.OK) {
+            JOptionPane.showMessageDialog(this, "Process finished with errors", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+    }
+
+    public void exceptionTaskCallback(Exception ex) {
         endBackgroundTask();
         outputTextArea.setText(ExceptionUtils.getCanonicalFormWithStackTrace(ex));
         JOptionPane.showMessageDialog(this, "Exception while running process", "Error", JOptionPane.ERROR_MESSAGE);

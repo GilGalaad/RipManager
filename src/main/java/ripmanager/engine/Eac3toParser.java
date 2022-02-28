@@ -63,8 +63,12 @@ public class Eac3toParser {
                     log.info("Skipping line: {}", line);
                     continue;
                 }
-                VideoTrack track = new VideoTrack(index, line);
-                tracks.add(track);
+                if (tracks.stream().filter(i -> i.getType() == TrackType.VIDEO).count() == 0) {
+                    VideoTrack track = new VideoTrack(index, line);
+                    tracks.add(track);
+                } else {
+                    log.info("Skipping line for secondary video stream: {}", line);
+                }
                 continue;
             }
 
