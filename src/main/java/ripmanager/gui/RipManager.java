@@ -53,6 +53,8 @@ public class RipManager extends javax.swing.JFrame {
         etaLabel.setHorizontalAlignment(javax.swing.SwingConstants.RIGHT);
         etaLabel.setText("ETA: 00:00:00");
 
+        trackTree.setRootVisible(false);
+        trackTree.setRowHeight(18);
         treeScrollPane.setViewportView(trackTree);
 
         generalDemuxOptionsPanel.setBorder(javax.swing.BorderFactory.createTitledBorder("General demux options"));

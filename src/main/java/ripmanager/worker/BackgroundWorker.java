@@ -79,7 +79,7 @@ public class BackgroundWorker extends SwingWorker<WorkerOutcome, Void> {
 
     private WorkerOutcome doAnalyze() throws Exception {
         // analyzing file with eac3to
-        List<String> args = Arrays.asList("eac3to.exe", source, "-log=NUL", "-progressnumbers");
+        List<String> args = Arrays.asList("eac3to", source, "-log=NUL", "-progressnumbers");
         ProcessOutcome eac3toOutcome = runEac3to(args);
         if (eac3toOutcome.getExitCode() != 0) {
             return new WorkerOutcome(WorkerOutcome.Status.KO, output.toString(), null);
@@ -97,7 +97,7 @@ public class BackgroundWorker extends SwingWorker<WorkerOutcome, Void> {
         }
         // otherwise, looking for chapters with mkvinfo
         output.append(System.lineSeparator());
-        args = Arrays.asList("mkvinfo.exe", source, "--ui-language", "en");
+        args = Arrays.asList("mkvinfo", source, "--ui-language", "en");
         ProcessOutcome mkvinfoOutcome = runGenericProcess(args);
         if (mkvinfoOutcome.getExitCode() != 0) {
             return new WorkerOutcome(WorkerOutcome.Status.KO, output.toString(), null);
@@ -127,18 +127,17 @@ public class BackgroundWorker extends SwingWorker<WorkerOutcome, Void> {
         for (var command : commands) {
             ProcessOutcome outcome;
             switch (command.get(0)) {
-                case "mkvextract.exe":
+                case "mkvextract":
                     outcome = runGenericProcess(command);
                     break;
-                case "eac3to.exe":
-                    //outcome = runEac3to(command);
-                    outcome = runGenericProcess(Arrays.asList("ping", "localhost", "-n", "1"));
+                case "eac3to":
+                    outcome = runEac3to(command);
+                    //outcome = runGenericProcess(Arrays.asList("ping", "localhost", "-n", "1"));
                     break;
-                case "ffmpeg.exe":
-                    //outcome = runFFmpeg(command);
-                    outcome = runGenericProcess(Arrays.asList("ping", "localhost", "-n", "1"));
+                case "ffmpeg":
+                    outcome = runFFmpeg(command);
                     break;
-                case "ffmsindex.exe":
+                case "ffmsindex":
                     outcome = runFFMSindex(command);
                     break;
                 default:
@@ -155,14 +154,14 @@ public class BackgroundWorker extends SwingWorker<WorkerOutcome, Void> {
     private List<List<String>> doGenerateCommands() {
         List<List<String>> ret = new ArrayList<>();
         List<String> eac3to = new ArrayList<>();
-        eac3to.add("eac3to.exe");
+        eac3to.add("eac3to");
         eac3to.add(source);
 
         // check if chapters must be extracted with mkvextract
         ChaptersTrack chaps = tracks.stream().filter(i -> i.getType() == TrackType.CHAPTERS).map(i -> (ChaptersTrack) i).filter(i -> i.getDemuxOptions().isSelected()).findFirst().orElse(null);
         if (chaps != null) {
             if (chaps.getProperties().isUseMkvExtract()) {
-                ret.add(Arrays.asList("mkvextract.exe", source, "chapters", "-s", "chaps.txt"));
+                ret.add(Arrays.asList("mkvextract", source, "chapters", "-s", "chaps.txt"));
             } else {
                 eac3to.add(String.format("%s:%s", chaps.getIndex(), "chaps.txt"));
             }
@@ -176,11 +175,11 @@ public class BackgroundWorker extends SwingWorker<WorkerOutcome, Void> {
                 // if we are demuxing, make it more verbose to collect eta information
                 if (command == WorkerCommand.PRINT_COMMANDS) {
                     // if we are just printing commands for manual execution, make the output quieter
-                    ffmmpeg.add(Arrays.asList("ffmpeg.exe", "-hide_banner", "-loglevel", "warning", "-stats", "-y", "-i", source, "-map", "0:v:0", "-c:v", "ffvhuff", "video_huff.mkv", "&&", "ffmsindex.exe", "video_huff.mkv"));
+                    ffmmpeg.add(Arrays.asList("ffmpeg", "-hide_banner", "-loglevel", "warning", "-stats", "-y", "-i", source, "-map", "0:v:0", "-c:v", "ffvhuff", "video_huff.mkv", "&&", "ffmsindex.exe", "video_huff.mkv"));
                 } else {
                     // if we are demuxing, make it more verbose to collect eta information
-                    ffmmpeg.add(Arrays.asList("ffmpeg.exe", "-hide_banner", "-y", "-i", source, "-map", "0:v:0", "-c:v", "ffvhuff", "video_huff.mkv"));
-                    ffmmpeg.add(Arrays.asList("ffmsindex.exe", "-f", "video_huff.mkv"));
+                    ffmmpeg.add(Arrays.asList("ffmpeg", "-hide_banner", "-y", "-i", source, "-map", "0:v:0", "-c:v", "ffvhuff", "video_huff.mkv"));
+                    ffmmpeg.add(Arrays.asList("ffmsindex", "-f", "video_huff.mkv"));
                 }
             }
         }
@@ -421,7 +420,7 @@ public class BackgroundWorker extends SwingWorker<WorkerOutcome, Void> {
 
     private List<String> wrapCommand(List<String> args) {
         List<String> wrappedArgs = new ArrayList<>(args.size() + 2);
-        wrappedArgs.add("python.exe");
+        wrappedArgs.add("python");
         wrappedArgs.add("C:\\dvd-rip\\python\\run_cmd.py");
         wrappedArgs.addAll(args);
         return wrappedArgs;

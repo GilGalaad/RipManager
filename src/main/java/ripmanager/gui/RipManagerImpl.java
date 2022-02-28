@@ -56,8 +56,6 @@ public class RipManagerImpl extends RipManager {
 
         trackTree.setModel(null);
         trackTree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
-        trackTree.setRootVisible(false);
-        trackTree.setRowHeight(18);
         trackTree.addTreeWillExpandListener(createCustomTreeWillExpandListener());
         trackTree.setCellRenderer(createCustomCellRenderer());
         trackTree.addMouseListener(createCustomMouseListener());
@@ -279,12 +277,16 @@ public class RipManagerImpl extends RipManager {
                 // customizing categories
                 if (VIDEO_CATEGORY_LABEL.equals(node.getUserObject().toString())) {
                     this.setIcon(VIDEO_CATEGORY_ICON);
+                    this.setDisabledIcon(VIDEO_CATEGORY_ICON);
                 } else if (AUDIO_CATEGORY_LABEL.equals(node.getUserObject().toString())) {
                     this.setIcon(AUDIO_CATEGORY_ICON);
+                    this.setDisabledIcon(AUDIO_CATEGORY_ICON);
                 } else if (SUBTITLES_CATEGORY_LABEL.equals(node.getUserObject().toString())) {
                     this.setIcon(SUBTITLES_CATEGORY_ICON);
+                    this.setDisabledIcon(SUBTITLES_CATEGORY_ICON);
                 } else if (CHAPTERS_CATEGORY_LABEL.equals(node.getUserObject().toString())) {
                     this.setIcon(CHAPTERS_CATEGORY_ICON);
+                    this.setDisabledIcon(CHAPTERS_CATEGORY_ICON);
                 }
                 // customizing tracks
                 if (Track.class.isAssignableFrom(node.getUserObject().getClass())) {
@@ -292,12 +294,16 @@ public class RipManagerImpl extends RipManager {
                 }
                 if (userObject instanceof VideoTrack) {
                     this.setIcon(((VideoTrack) userObject).getDemuxOptions().isSelected() ? SELECTED_YES_ICON : SELECTED_NO_ICON);
+                    this.setDisabledIcon(((VideoTrack) userObject).getDemuxOptions().isSelected() ? SELECTED_YES_ICON : SELECTED_NO_ICON);
                 } else if (userObject instanceof AudioTrack) {
                     this.setIcon(((AudioTrack) userObject).getDemuxOptions().isSelected() ? SELECTED_YES_ICON : SELECTED_NO_ICON);
+                    this.setDisabledIcon(((AudioTrack) userObject).getDemuxOptions().isSelected() ? SELECTED_YES_ICON : SELECTED_NO_ICON);
                 } else if (userObject instanceof SubtitlesTrack) {
                     this.setIcon(((SubtitlesTrack) userObject).getDemuxOptions().isSelected() ? SELECTED_YES_ICON : SELECTED_NO_ICON);
+                    this.setDisabledIcon(((SubtitlesTrack) userObject).getDemuxOptions().isSelected() ? SELECTED_YES_ICON : SELECTED_NO_ICON);
                 } else if (userObject instanceof ChaptersTrack) {
                     this.setIcon(((ChaptersTrack) userObject).getDemuxOptions().isSelected() ? SELECTED_YES_ICON : SELECTED_NO_ICON);
+                    this.setDisabledIcon(((ChaptersTrack) userObject).getDemuxOptions().isSelected() ? SELECTED_YES_ICON : SELECTED_NO_ICON);
                 }
                 return this;
             }

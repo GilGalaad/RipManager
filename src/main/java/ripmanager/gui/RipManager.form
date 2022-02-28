@@ -181,6 +181,10 @@
       <Layout class="org.netbeans.modules.form.compat2.layouts.support.JScrollPaneSupportLayout"/>
       <SubComponents>
         <Component class="javax.swing.JTree" name="trackTree">
+          <Properties>
+            <Property name="rootVisible" type="boolean" value="false"/>
+            <Property name="rowHeight" type="int" value="18"/>
+          </Properties>
           <AuxValues>
             <AuxValue name="JavaCodeGenerator_VariableModifier" type="java.lang.Integer" value="4"/>
           </AuxValues>
