@@ -30,8 +30,9 @@ public class BackgroundWorker extends SwingWorker<WorkerOutcome, Void> {
 
     private static final Pattern EAC3TO_PROGRESS_PATTERN = Pattern.compile("(analyze|process): (?<progress>\\d+)%");
     private static final Pattern MKVINFO_CHAPTERS_PATTERN = Pattern.compile("^\\|\\+ Chapters$", Pattern.MULTILINE);
-    private static final Pattern FFMPEG_DURATION_PATTERN = Pattern.compile("\\s+Duration:\\s+(?<duration>(\\d{2}:)+?(\\d{2}:)+?(\\d{2}.)+?\\d{2}),.*");
-    private static final Pattern FFMPEG_PROGRESS_PATTERN = Pattern.compile("frame=.+?fps=.+?q=.+?size=.+?time=(?<time>(\\d{2}:)+?(\\d{2}:)+?(\\d{2}.)+?\\d{2}).+?bitrate=.+");
+    private static final Pattern FFMPEG_DURATION_PATTERN = Pattern.compile("\\s*Duration:\\s+(?<duration>(\\d{2}:)+?(\\d{2}:)+?(\\d{2}.)+?\\d{2}),.*");
+    private static final Pattern FFMPEG_TIME_PATTERN = Pattern.compile("frame=.+?fps=.+?q=.+?size=.+?time=(?<time>(\\d{2}:)+?(\\d{2}:)+?(\\d{2}.)+?\\d{2}).+?bitrate=.+");
+    private static final Pattern FFMSINDEX_PROGRESS_PATTERN = Pattern.compile("Indexing, please wait\\.{3}\\s*(?<progress>\\d{1,3})%\\s*");
 
     // class init params
     private final WorkerCommand command;
@@ -127,14 +128,18 @@ public class BackgroundWorker extends SwingWorker<WorkerOutcome, Void> {
             ProcessOutcome outcome;
             switch (command.get(0)) {
                 case "mkvextract.exe":
-                case "ffmsindex.exe":
                     outcome = runGenericProcess(command);
                     break;
                 case "eac3to.exe":
+                    //outcome = runEac3to(command);
                     outcome = runGenericProcess(Arrays.asList("ping", "localhost", "-n", "1"));
                     break;
                 case "ffmpeg.exe":
-                    outcome = runFFmpeg(command);
+                    //outcome = runFFmpeg(command);
+                    outcome = runGenericProcess(Arrays.asList("ping", "localhost", "-n", "1"));
+                    break;
+                case "ffmsindex.exe":
+                    outcome = runFFMSindex(command);
                     break;
                 default:
                     throw new UnsupportedOperationException("Unsupported executable: " + command.get(0));
@@ -175,7 +180,7 @@ public class BackgroundWorker extends SwingWorker<WorkerOutcome, Void> {
                 } else {
                     // if we are demuxing, make it more verbose to collect eta information
                     ffmmpeg.add(Arrays.asList("ffmpeg.exe", "-hide_banner", "-y", "-i", source, "-map", "0:v:0", "-c:v", "ffvhuff", "video_huff.mkv"));
-                    ffmmpeg.add(Arrays.asList("ffmsindex.exe", "video_huff.mkv"));
+                    ffmmpeg.add(Arrays.asList("ffmsindex.exe", "-f", "video_huff.mkv"));
                 }
             }
         }
@@ -254,17 +259,18 @@ public class BackgroundWorker extends SwingWorker<WorkerOutcome, Void> {
                         setProgress(Math.min(progress, 100));
                         firePropertyChange("eta", null, calcEta(startTime, progress));
                     }
-                } else {
-                    output.append(CommonUtils.rtrim(line)).append(System.lineSeparator());
-                    stdout.append(CommonUtils.rtrim(line)).append(System.lineSeparator());
-                    firePropertyChange("output", null, output.toString());
+                    continue;
                 }
+                output.append(CommonUtils.rtrim(line)).append(System.lineSeparator());
+                stdout.append(CommonUtils.rtrim(line)).append(System.lineSeparator());
+                firePropertyChange("output", null, output.toString());
             }
         }
         p.waitFor();
+        long endTime = System.nanoTime();
 
-        log.info("Process finished with exit code: {}", p.exitValue());
-        output.append("Process finished with exit code: ").append(p.exitValue()).append(System.lineSeparator());
+        log.info("Process finished with exit code: {} after {}", p.exitValue(), smartElapsed(endTime - startTime));
+        output.append(String.format("Process finished with exit code: %s after %s", p.exitValue(), smartElapsed(endTime - startTime))).append(System.lineSeparator());
         firePropertyChange("output", null, output.toString());
 
         return new ProcessOutcome(p.exitValue(), stdout.toString());
@@ -301,7 +307,7 @@ public class BackgroundWorker extends SwingWorker<WorkerOutcome, Void> {
                     firePropertyChange("output", null, output.toString());
                     continue;
                 }
-                m = FFMPEG_PROGRESS_PATTERN.matcher(line);
+                m = FFMPEG_TIME_PATTERN.matcher(line);
                 if (m.matches()) {
                     long currentTime = parseInterval(m.group("time"));
                     if (duration != 0) {
@@ -311,11 +317,15 @@ public class BackgroundWorker extends SwingWorker<WorkerOutcome, Void> {
                             firePropertyChange("eta", null, calcEta(startTime, getProgress()));
                         }
                     }
-                    removeLastOuputLine();
+                    if (getLastOutputLine().startsWith("frame=")) {
+                        removeLastOuputLine();
+                    }
                     output.append(line.trim()).append(System.lineSeparator());
                     stdout.append(line.trim()).append(System.lineSeparator());
                     firePropertyChange("output", null, output.toString());
-                } else if (line.contains("muxing overhead:")) {
+                    continue;
+                }
+                if (line.contains("muxing overhead:")) {
                     output.append(line.trim()).append(System.lineSeparator());
                     stdout.append(line.trim()).append(System.lineSeparator());
                     firePropertyChange("output", null, output.toString());
@@ -323,9 +333,54 @@ public class BackgroundWorker extends SwingWorker<WorkerOutcome, Void> {
             }
         }
         p.waitFor();
+        long endTime = System.nanoTime();
 
-        log.info("Process finished with exit code: {}", p.exitValue());
-        output.append("Process finished with exit code: ").append(p.exitValue()).append(System.lineSeparator());
+        log.info("Process finished with exit code: {} after {}", p.exitValue(), smartElapsed(endTime - startTime));
+        output.append(String.format("Process finished with exit code: %s after %s", p.exitValue(), smartElapsed(endTime - startTime))).append(System.lineSeparator());
+        firePropertyChange("output", null, output.toString());
+
+        return new ProcessOutcome(p.exitValue(), stdout.toString());
+    }
+
+    private ProcessOutcome runFFMSindex(List<String> args) throws Exception {
+        log.info("Running: {}", String.join(" ", args));
+        output.append("Running: ").append(String.join(" ", args)).append(System.lineSeparator());
+        firePropertyChange("output", null, output.toString());
+
+        StringBuilder stdout = new StringBuilder();
+        ProcessBuilder pb = new ProcessBuilder(args.toArray(new String[0]));
+        pb.directory(new File("d:\\iso"));
+        pb.redirectErrorStream(true);
+        long startTime = System.nanoTime();
+        Process p = pb.start();
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                if (isCancelled()) {
+                    log.info("Cancelling execution and killing children processes");
+                    p.descendants().forEachOrdered(ProcessHandle::destroyForcibly);
+                    throw new RuntimeException();
+                }
+                if (isEmpty(line)) {
+                    continue;
+                }
+                Matcher m = FFMSINDEX_PROGRESS_PATTERN.matcher(line);
+                if (m.matches()) {
+                    int progress = Integer.parseInt(m.group("progress"));
+                    setProgress(Math.min(progress, 100));
+                    firePropertyChange("eta", null, calcEta(startTime, progress));
+                    continue;
+                }
+                output.append(line.trim()).append(System.lineSeparator());
+                stdout.append(line.trim()).append(System.lineSeparator());
+                firePropertyChange("output", null, output.toString());
+            }
+        }
+        p.waitFor();
+        long endTime = System.nanoTime();
+
+        log.info("Process finished with exit code: {} after {}", p.exitValue(), smartElapsed(endTime - startTime));
+        output.append(String.format("Process finished with exit code: %s after %s", p.exitValue(), smartElapsed(endTime - startTime))).append(System.lineSeparator());
         firePropertyChange("output", null, output.toString());
 
         return new ProcessOutcome(p.exitValue(), stdout.toString());
@@ -340,6 +395,7 @@ public class BackgroundWorker extends SwingWorker<WorkerOutcome, Void> {
         ProcessBuilder pb = new ProcessBuilder(args.toArray(new String[0]));
         pb.directory(new File("d:\\iso"));
         pb.redirectErrorStream(true);
+        long startTime = System.nanoTime();
         Process p = pb.start();
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()))) {
             String line;
@@ -354,9 +410,10 @@ public class BackgroundWorker extends SwingWorker<WorkerOutcome, Void> {
             }
         }
         p.waitFor();
+        long endTime = System.nanoTime();
 
-        log.info("Process finished with exit code: {}", p.exitValue());
-        output.append("Process finished with exit code: ").append(p.exitValue()).append(System.lineSeparator());
+        log.info("Process finished with exit code: {} after {}", p.exitValue(), smartElapsed(endTime - startTime));
+        output.append(String.format("Process finished with exit code: %s after %s", p.exitValue(), smartElapsed(endTime - startTime))).append(System.lineSeparator());
         firePropertyChange("output", null, output.toString());
 
         return new ProcessOutcome(p.exitValue(), stdout.toString());
@@ -370,8 +427,17 @@ public class BackgroundWorker extends SwingWorker<WorkerOutcome, Void> {
         return wrappedArgs;
     }
 
+    private String getLastOutputLine() {
+        if (output.toString().endsWith(System.lineSeparator())) {
+            return output.substring(output.substring(0, output.length() - System.lineSeparator().length()).lastIndexOf(System.lineSeparator()) + System.lineSeparator().length());
+        }
+        return output.substring(output.lastIndexOf(System.lineSeparator() + System.lineSeparator().length()));
+    }
+
     private void removeLastOuputLine() {
-        output.setLength(output.lastIndexOf(System.lineSeparator()));
+        if (output.toString().endsWith(System.lineSeparator())) {
+            output.setLength(output.lastIndexOf(System.lineSeparator()));
+        }
         output.setLength(output.lastIndexOf(System.lineSeparator()) + System.lineSeparator().length());
     }
 
