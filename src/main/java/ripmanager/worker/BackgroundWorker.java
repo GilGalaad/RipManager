@@ -175,7 +175,6 @@ public class BackgroundWorker extends SwingWorker<WorkerOutcome, Void> {
         List<String> args = new ArrayList<>();
         args.add("python");
         args.add("c:\\dvd-rip\\python\\encode.py");
-        args.add("-n");
         if (encodingOptions.getCrf() != 18) {
             args.add("--crf");
             args.add(Integer.toString(encodingOptions.getCrf()));
