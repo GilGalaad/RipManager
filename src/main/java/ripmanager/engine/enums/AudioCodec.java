@@ -10,23 +10,23 @@ import java.util.stream.Collectors;
 public enum AudioCodec {
     DOLBY_ATMOS(Arrays.asList("TrueHD (Atmos)", "TrueHD/AC3 (Atmos)"), true, "thd", "ac3"),
     DOLBY_THD(Arrays.asList("TrueHD", "TrueHD/AC3"), true, "thd", "ac3"),
-    DOLBY_DIGITAL_PLUS(Arrays.asList("EAC3", "E-AC3"), false, null, "eac3"),
-    DOLBY_DIGITAL(Arrays.asList("AC3", "AC3 EX", "AC3 Surround"), false, null, "ac3"),
+    DOLBY_DIGITAL_PLUS(Arrays.asList("EAC3", "E-AC3"), false, "eac3", null),
+    DOLBY_DIGITAL(Arrays.asList("AC3", "AC3 EX", "AC3 Surround"), false, "ac3", null),
     DTS_MA(Arrays.asList("DTS Master Audio"), true, "dtsma", "dts"),
     DTS_HIRES(Arrays.asList("DTS Hi-Res"), true, "dtshd", "dts"),
-    DTS(Arrays.asList("DTS", "DTS-ES", "DTS Express"), false, null, "dts"),
+    DTS(Arrays.asList("DTS", "DTS-ES", "DTS Express"), false, "dts", null),
     PCM(Arrays.asList("RAW/PCM"), true, "wav", null);
 
     private final List<String> names;
     private final boolean lossless;
-    private final String losslessExtension;
-    private final String lossyExtension;
+    private final String originalExtension;
+    private final String coreExtension;
 
-    AudioCodec(List<String> names, boolean lossless, String losslessExtension, String lossyExtension) {
+    AudioCodec(List<String> names, boolean lossless, String originalExtension, String coreExtension) {
         this.names = names;
         this.lossless = lossless;
-        this.losslessExtension = losslessExtension;
-        this.lossyExtension = lossyExtension;
+        this.originalExtension = originalExtension;
+        this.coreExtension = coreExtension;
     }
 
     public static AudioCodec findByName(String name) {

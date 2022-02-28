@@ -43,6 +43,7 @@ public class RipManager extends javax.swing.JFrame {
 
         outputTextArea.setEditable(false);
         outputTextArea.setColumns(20);
+        outputTextArea.setLineWrap(true);
         outputTextArea.setRows(5);
         outputScrollPane.setViewportView(outputTextArea);
 
