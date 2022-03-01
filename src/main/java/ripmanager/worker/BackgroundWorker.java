@@ -251,8 +251,13 @@ public class BackgroundWorker extends SwingWorker<WorkerOutcome, Void> {
                     eac3to.add(String.format("%s:audio.%s.%s.core.%s", audioTrack.getIndex(), audioTrack.getProperties().getLanguage().getCode(), audioTrack.getIndex(), codec.getCoreExtension()));
                 }
                 if (strategy == LosslessDemuxStrategy.KEEP_BOTH || strategy == LosslessDemuxStrategy.KEEP_LOSSY) {
-                    String format = audioTrack.getProperties().getChannels() <= 2 ? "2ch.256kbps" : "6ch.640kbps";
-                    eac3to.add(String.format("%s:audio.%s.%s.compressed.%s.%s", audioTrack.getIndex(), audioTrack.getProperties().getLanguage().getCode(), audioTrack.getIndex(), format, "ac3"));
+                    if (audioTrack.getProperties().getChannels() <= 2) {
+                        eac3to.add(String.format("%s:audio.%s.%s.compressed.%s.%s", audioTrack.getIndex(), audioTrack.getProperties().getLanguage().getCode(), audioTrack.getIndex(), "2ch.256kbps", "ac3"));
+                        eac3to.add("-256");
+                    } else {
+                        eac3to.add(String.format("%s:audio.%s.%s.compressed.%s.%s", audioTrack.getIndex(), audioTrack.getProperties().getLanguage().getCode(), audioTrack.getIndex(), "6ch.640kbps", "ac3"));
+                        eac3to.add("-640");
+                    }
                     if (audioTrack.getProperties().getChannels() > 6) {
                         eac3to.add("-down6");
                     }
