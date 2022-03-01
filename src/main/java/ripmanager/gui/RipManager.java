@@ -16,10 +16,10 @@ public class RipManager extends javax.swing.JFrame {
         sourceTextField = new javax.swing.JTextField();
         sourceButton = new javax.swing.JButton();
         analyzeButton = new javax.swing.JButton();
-        outputScrollPane = new javax.swing.JScrollPane();
-        outputTextArea = new javax.swing.JTextArea();
-        progressBar = new javax.swing.JProgressBar();
-        etaLabel = new javax.swing.JLabel();
+        printCommandsButton = new javax.swing.JButton();
+        demuxButton = new javax.swing.JButton();
+        encodeButton = new javax.swing.JButton();
+        demuxEncodeButton = new javax.swing.JButton();
         treeScrollPane = new javax.swing.JScrollPane();
         trackTree = new javax.swing.JTree();
         generalDemuxOptionsPanel = new javax.swing.JPanel();
@@ -32,10 +32,6 @@ public class RipManager extends javax.swing.JFrame {
         lossyRadioButton = new javax.swing.JRadioButton();
         extractCoreCheckBox = new javax.swing.JCheckBox();
         normalizeCheckBox = new javax.swing.JCheckBox();
-        printCommandsButton = new javax.swing.JButton();
-        demuxButton = new javax.swing.JButton();
-        encodeButton = new javax.swing.JButton();
-        demuxEncodeButton = new javax.swing.JButton();
         encodingOptionsPanel = new javax.swing.JPanel();
         encoderComboBox = new javax.swing.JComboBox<>();
         encoderLabel = new javax.swing.JLabel();
@@ -45,6 +41,10 @@ public class RipManager extends javax.swing.JFrame {
         suffixLabel = new javax.swing.JLabel();
         y4mCheckBox = new javax.swing.JCheckBox();
         y4mLabel = new javax.swing.JLabel();
+        outputScrollPane = new javax.swing.JScrollPane();
+        outputTextArea = new javax.swing.JTextArea();
+        progressBar = new javax.swing.JProgressBar();
+        etaLabel = new javax.swing.JLabel();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setTitle("RipManager");
@@ -55,16 +55,16 @@ public class RipManager extends javax.swing.JFrame {
 
         analyzeButton.setText("Analyze");
 
-        outputTextArea.setEditable(false);
-        outputTextArea.setColumns(20);
-        outputTextArea.setLineWrap(true);
-        outputTextArea.setRows(5);
-        outputScrollPane.setViewportView(outputTextArea);
+        printCommandsButton.setText("Print Commands");
+        printCommandsButton.setEnabled(false);
 
-        progressBar.setStringPainted(true);
+        demuxButton.setText("Demux");
+        demuxButton.setEnabled(false);
 
-        etaLabel.setHorizontalAlignment(javax.swing.SwingConstants.RIGHT);
-        etaLabel.setText("ETA: 00:00:00");
+        encodeButton.setText("Encode");
+
+        demuxEncodeButton.setText("Demux & Encode");
+        demuxEncodeButton.setEnabled(false);
 
         trackTree.setRootVisible(false);
         trackTree.setRowHeight(18);
@@ -93,6 +93,7 @@ public class RipManager extends javax.swing.JFrame {
         );
 
         videoDemuxOptionsPanel.setBorder(javax.swing.BorderFactory.createTitledBorder("Video demux options"));
+        videoDemuxOptionsPanel.setPreferredSize(new java.awt.Dimension(291, 59));
 
         convertToHuffCheckBox.setText("Convert to FFMpeg HuffYUV");
         convertToHuffCheckBox.setEnabled(false);
@@ -104,7 +105,7 @@ public class RipManager extends javax.swing.JFrame {
                         .addGroup(videoDemuxOptionsPanelLayout.createSequentialGroup()
                                 .addContainerGap()
                                 .addComponent(convertToHuffCheckBox)
-                                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                                .addContainerGap(112, Short.MAX_VALUE))
         );
         videoDemuxOptionsPanelLayout.setVerticalGroup(
                 videoDemuxOptionsPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -115,6 +116,7 @@ public class RipManager extends javax.swing.JFrame {
         );
 
         audioDemuxOptionsPanel.setBorder(javax.swing.BorderFactory.createTitledBorder("Audio demux options"));
+        audioDemuxOptionsPanel.setPreferredSize(new java.awt.Dimension(291, 163));
 
         audioDemuxButtonGroup.add(losslessAndLossyRadioButton);
         losslessAndLossyRadioButton.setText("Keep both lossless and lossy");
@@ -146,7 +148,7 @@ public class RipManager extends javax.swing.JFrame {
                                         .addComponent(lossyRadioButton)
                                         .addComponent(extractCoreCheckBox)
                                         .addComponent(normalizeCheckBox))
-                                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                                .addContainerGap(112, Short.MAX_VALUE))
         );
         audioDemuxOptionsPanelLayout.setVerticalGroup(
                 audioDemuxOptionsPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -163,17 +165,6 @@ public class RipManager extends javax.swing.JFrame {
                                 .addComponent(extractCoreCheckBox)
                                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
-
-        printCommandsButton.setText("Print Commands");
-        printCommandsButton.setEnabled(false);
-
-        demuxButton.setText("Demux");
-        demuxButton.setEnabled(false);
-
-        encodeButton.setText("Encode");
-
-        demuxEncodeButton.setText("Demux & Encode");
-        demuxEncodeButton.setEnabled(false);
 
         encodingOptionsPanel.setBorder(javax.swing.BorderFactory.createTitledBorder("Encoding options"));
 
@@ -236,6 +227,17 @@ public class RipManager extends javax.swing.JFrame {
                                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
 
+        outputTextArea.setEditable(false);
+        outputTextArea.setColumns(20);
+        outputTextArea.setLineWrap(true);
+        outputTextArea.setRows(5);
+        outputScrollPane.setViewportView(outputTextArea);
+
+        progressBar.setStringPainted(true);
+
+        etaLabel.setHorizontalAlignment(javax.swing.SwingConstants.RIGHT);
+        etaLabel.setText("ETA: 00:00:00");
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
@@ -255,22 +257,22 @@ public class RipManager extends javax.swing.JFrame {
                                                 .addComponent(treeScrollPane)
                                                 .addGap(18, 18, 18)
                                                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                                                        .addComponent(videoDemuxOptionsPanel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                                                        .addComponent(audioDemuxOptionsPanel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                                                        .addComponent(encodingOptionsPanel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                                        .addComponent(videoDemuxOptionsPanel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                                        .addComponent(audioDemuxOptionsPanel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                                        .addComponent(encodingOptionsPanel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                                                         .addComponent(generalDemuxOptionsPanel, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
                                         .addGroup(layout.createSequentialGroup()
-                                                .addComponent(analyzeButton, javax.swing.GroupLayout.PREFERRED_SIZE, 180, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED, 39, Short.MAX_VALUE)
-                                                .addComponent(printCommandsButton, javax.swing.GroupLayout.PREFERRED_SIZE, 180, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED, 39, Short.MAX_VALUE)
-                                                .addComponent(demuxButton, javax.swing.GroupLayout.PREFERRED_SIZE, 180, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED, 39, Short.MAX_VALUE)
-                                                .addComponent(encodeButton, javax.swing.GroupLayout.PREFERRED_SIZE, 180, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 38, Short.MAX_VALUE)
-                                                .addComponent(demuxEncodeButton, javax.swing.GroupLayout.PREFERRED_SIZE, 180, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                                                .addComponent(analyzeButton, javax.swing.GroupLayout.DEFAULT_SIZE, 173, Short.MAX_VALUE)
+                                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                                                .addComponent(printCommandsButton, javax.swing.GroupLayout.DEFAULT_SIZE, 173, Short.MAX_VALUE)
+                                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 16, Short.MAX_VALUE)
+                                                .addComponent(demuxButton, javax.swing.GroupLayout.DEFAULT_SIZE, 164, Short.MAX_VALUE)
+                                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 16, Short.MAX_VALUE)
+                                                .addComponent(encodeButton, javax.swing.GroupLayout.DEFAULT_SIZE, 171, Short.MAX_VALUE)
+                                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 19, Short.MAX_VALUE)
+                                                .addComponent(demuxEncodeButton, javax.swing.GroupLayout.DEFAULT_SIZE, 173, Short.MAX_VALUE)))
                                 .addGap(18, 18, 18)
-                                .addComponent(outputScrollPane, javax.swing.GroupLayout.DEFAULT_SIZE, 1007, Short.MAX_VALUE)
+                                .addComponent(outputScrollPane, javax.swing.GroupLayout.DEFAULT_SIZE, 1047, Short.MAX_VALUE)
                                 .addContainerGap())
         );
         layout.setVerticalGroup(
@@ -282,30 +284,30 @@ public class RipManager extends javax.swing.JFrame {
                                                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                                                         .addComponent(sourceTextField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                                                         .addComponent(sourceButton))
-                                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                                                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                                                         .addComponent(analyzeButton)
                                                         .addComponent(printCommandsButton)
                                                         .addComponent(demuxButton)
                                                         .addComponent(encodeButton)
                                                         .addComponent(demuxEncodeButton))
-                                                .addGap(18, 18, 18)
+                                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                                                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                                        .addComponent(treeScrollPane)
                                                         .addGroup(layout.createSequentialGroup()
                                                                 .addComponent(generalDemuxOptionsPanel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                                                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                                                                 .addComponent(videoDemuxOptionsPanel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                                                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                                                                 .addComponent(audioDemuxOptionsPanel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                                                .addGap(18, 18, 18)
+                                                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                                                                 .addComponent(encodingOptionsPanel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                                                .addGap(0, 0, Short.MAX_VALUE)))
-                                                .addGap(18, 18, 18)
+                                                                .addGap(0, 594, Short.MAX_VALUE))
+                                                        .addComponent(treeScrollPane))
+                                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                                                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                                                         .addComponent(progressBar, javax.swing.GroupLayout.PREFERRED_SIZE, 25, javax.swing.GroupLayout.PREFERRED_SIZE)
                                                         .addComponent(etaLabel)))
-                                        .addComponent(outputScrollPane, javax.swing.GroupLayout.DEFAULT_SIZE, 1278, Short.MAX_VALUE))
+                                        .addComponent(outputScrollPane))
                                 .addContainerGap())
         );
 
