@@ -7,7 +7,6 @@ import ripmanager.engine.Eac3toParser;
 import ripmanager.engine.dto.*;
 import ripmanager.engine.enums.AudioCodec;
 import ripmanager.engine.enums.Encoder;
-import ripmanager.engine.enums.Language;
 import ripmanager.gui.RipManagerImpl;
 
 import javax.swing.*;
@@ -238,20 +237,18 @@ public class BackgroundWorker extends SwingWorker<WorkerOutcome, Void> {
         // audio tracks
         List<AudioTrack> audioTracks = tracks.stream().filter(i -> i.getType() == TrackType.AUDIO).map(i -> (AudioTrack) i).filter(i -> i.getDemuxOptions().isSelected()).collect(Collectors.toList());
         for (var audioTrack : audioTracks) {
-            int index = audioTrack.getIndex();
             AudioCodec codec = audioTrack.getProperties().getCodec();
-            Language lang = audioTrack.getProperties().getLanguage();
             LosslessDemuxStrategy strategy = audioTrack.getDemuxOptions().getDemuxStrategy();
             if (codec.isLossless()) {
                 if (strategy == LosslessDemuxStrategy.KEEP_BOTH || strategy == LosslessDemuxStrategy.KEEP_LOSSLESS) {
-                    eac3to.add(String.format("%s:audio.%s.%s.orig.%s", index, lang.getCode(), index, codec.getOriginalExtension()));
+                    eac3to.add(String.format("%s:audio.%s.%s.orig.%s", audioTrack.getIndex(), audioTrack.getProperties().getLanguage().getCode(), audioTrack.getIndex(), codec.getOriginalExtension()));
                 }
                 if (audioTrack.getDemuxOptions().getExtractCore()) {
-                    eac3to.add(String.format("%s:audio.%s.%s.core.%s", index, lang.getCode(), index, codec.getCoreExtension()));
+                    eac3to.add(String.format("%s:audio.%s.%s.core.%s", audioTrack.getIndex(), audioTrack.getProperties().getLanguage().getCode(), audioTrack.getIndex(), codec.getCoreExtension()));
                 }
                 if (strategy == LosslessDemuxStrategy.KEEP_BOTH || strategy == LosslessDemuxStrategy.KEEP_LOSSY) {
                     String format = audioTrack.getProperties().getChannels() <= 2 ? "2ch.256kbps" : "6ch.640kbps";
-                    eac3to.add(String.format("%s:audio.%s.%s.compressed.%s.%s", index, lang.getCode(), index, format, "ac3"));
+                    eac3to.add(String.format("%s:audio.%s.%s.compressed.%s.%s", audioTrack.getIndex(), audioTrack.getProperties().getLanguage().getCode(), audioTrack.getIndex(), format, "ac3"));
                     if (audioTrack.getProperties().getChannels() > 6) {
                         eac3to.add("-down6");
                     }
@@ -260,11 +257,17 @@ public class BackgroundWorker extends SwingWorker<WorkerOutcome, Void> {
                     }
                 }
             } else {
-                eac3to.add(String.format("%s:audio.%s.%s.orig.%s", index, lang.getCode(), index, codec.getOriginalExtension()));
+                eac3to.add(String.format("%s:audio.%s.%s.orig.%s", audioTrack.getIndex(), audioTrack.getProperties().getLanguage().getCode(), audioTrack.getIndex(), codec.getOriginalExtension()));
             }
         }
         eac3to.add("-log=NUL");
         ret.add(eac3to);
+
+        // subtitles
+        List<SubtitlesTrack> subtitlesTracks = tracks.stream().filter(i -> i.getType() == TrackType.SUBTITLES).map(i -> (SubtitlesTrack) i).filter(i -> i.getDemuxOptions().isSelected()).collect(Collectors.toList());
+        for (var subtitlesTrack : subtitlesTracks) {
+            eac3to.add(String.format("%s:sub.%s.%s.sup", subtitlesTrack.getIndex(), subtitlesTrack.getProperties().getLanguage().getCode(), subtitlesTrack.getIndex()));
+        }
 
         // adding ffmpeg at the end
         ret.addAll(ffmmpeg);
