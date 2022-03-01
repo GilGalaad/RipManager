@@ -172,6 +172,7 @@ public class RipManagerImpl extends RipManager {
     }
 
     public void analyzeTaskCallback(WorkerOutcome outcome) {
+        endBackgroundTask();
         outputTextArea.setText(outcome.getOutput());
         if (outcome.getStatus() != WorkerOutcome.Status.OK) {
             JOptionPane.showMessageDialog(this, "Process completed with errors", "Error", JOptionPane.ERROR_MESSAGE);
@@ -179,7 +180,6 @@ public class RipManagerImpl extends RipManager {
         }
         tracks = outcome.getTracks();
         populateTree();
-        endBackgroundTask();
     }
 
     public void printCommandsButtonClicked() {
