@@ -34,7 +34,9 @@ public class BackgroundWorker extends SwingWorker<WorkerOutcome, Void> {
     private static final Pattern FFMPEG_TIME_PATTERN = Pattern.compile("frame=.+?fps=.+?q=.+?size=.+?time=(?<time>(\\d{2}:)+?(\\d{2}:)+?(\\d{2}.)+?\\d{2}).+?bitrate=.+");
     private static final Pattern FFMSINDEX_PROGRESS_PATTERN = Pattern.compile("Indexing, please wait\\.{3}\\s*(?<progress>\\d{1,3})%\\s*");
     private static final Pattern ENCODE_TOTALFRAMES_PATTERN = Pattern.compile("Detected length: (?<frames>\\d+) frames");
-    private static final Pattern ENCODE_PROGRESS_PATTERN = Pattern.compile("(?<frames>\\d+) frames:.*");
+    private static final Pattern VSPIPE_PROGRESS_PATTERN = Pattern.compile("Frame: (?<frame>\\d+)/.*");
+    private static final Pattern X264_PROGRESS_PATTERN1 = Pattern.compile("(?<frame>\\d+) frames:.*");
+    private static final Pattern X264_PROGRESS_PATTERN2 = Pattern.compile("\\[\\d+\\.\\d+%] (?<frame>\\d+)/\\d+ frames,.*");
 
     // class init params
     private final WorkerCommand command;
@@ -182,6 +184,9 @@ public class BackgroundWorker extends SwingWorker<WorkerOutcome, Void> {
             args.add("--suffix");
             args.add(encodingOptions.getSuffix());
         }
+        if (encodingOptions.isY4m()) {
+            args.add("--y4m");
+        }
         if (encodingOptions.getEncoder() != Encoder.AUTODETECT) {
             args.add(encodingOptions.getEncoder().toString());
         }
@@ -269,7 +274,7 @@ public class BackgroundWorker extends SwingWorker<WorkerOutcome, Void> {
 
         eac3to.add("-log=NUL");
         ret.add(eac3to);
-        
+
         // adding ffmpeg at the end
         ret.addAll(ffmmpeg);
 
@@ -446,6 +451,7 @@ public class BackgroundWorker extends SwingWorker<WorkerOutcome, Void> {
 
         StringBuilder stdout = new StringBuilder();
         long totalFrames = 0;
+        List<Pattern> progressPatterns = Arrays.asList(VSPIPE_PROGRESS_PATTERN, X264_PROGRESS_PATTERN1, X264_PROGRESS_PATTERN2);
         ProcessBuilder pb = new ProcessBuilder(args.toArray(new String[0]));
         pb.directory(new File("d:\\iso"));
         pb.redirectErrorStream(true);
@@ -454,6 +460,9 @@ public class BackgroundWorker extends SwingWorker<WorkerOutcome, Void> {
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()))) {
             String line;
             while ((line = reader.readLine()) != null) {
+                if (line.contains("evaluation")) {
+                    log.info(line);
+                }
                 if (isCancelled()) {
                     log.info("Cancelling execution and killing children processes");
                     p.descendants().forEachOrdered(ProcessHandle::destroyForcibly);
@@ -463,19 +472,20 @@ public class BackgroundWorker extends SwingWorker<WorkerOutcome, Void> {
                 if (m.matches()) {
                     totalFrames = Long.parseLong(m.group("frames"));
                 }
-                m = ENCODE_PROGRESS_PATTERN.matcher(line);
-                if (m.matches()) {
-                    long currentFrames = Long.parseLong(m.group("frames"));
+                Matcher pm = getFirstMatcherForMultiplePatterns(line, progressPatterns);
+                if (pm != null) {
+                    long currentFrame = Long.parseLong(pm.group("frame"));
                     if (totalFrames != 0) {
-                        int progress = calcPercent(currentFrames, totalFrames);
+                        int progress = calcPercent(currentFrame, totalFrames);
                         if (progress != getProgress()) {
                             setProgress(Math.min(progress, 100));
                             firePropertyChange("eta", null, calcEta(startTime, getProgress()));
                         }
                     }
                 }
-                if (getLastOutputLine().contains("frames") && getLastOutputLine().contains("fps") && getLastOutputLine().contains("kb/s")) {
-                    // there is an unwanted empty line at the end of the encoding, when we actually want to delete the last progress line
+                // test previous line to check if it must be deleted or not
+                if (getFirstMatcherForMultiplePatterns(getLastOutputLine().trim(), progressPatterns) != null) {
+                    // there is an unwanted empty line at the end of the x264 encoding
                     if (isEmpty(line)) {
                         continue;
                     }
@@ -549,6 +559,16 @@ public class BackgroundWorker extends SwingWorker<WorkerOutcome, Void> {
             output.setLength(output.lastIndexOf(System.lineSeparator()));
         }
         output.setLength(output.lastIndexOf(System.lineSeparator()) + System.lineSeparator().length());
+    }
+
+    private Matcher getFirstMatcherForMultiplePatterns(String s, List<Pattern> patterns) {
+        for (Pattern pattern : patterns) {
+            Matcher matcher = pattern.matcher(s);
+            if (matcher.matches()) {
+                return matcher;
+            }
+        }
+        return null;
     }
 
 }
