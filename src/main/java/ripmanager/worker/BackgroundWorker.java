@@ -35,8 +35,8 @@ public class BackgroundWorker extends SwingWorker<WorkerOutcome, Void> {
     private static final Pattern FFMSINDEX_PROGRESS_PATTERN = Pattern.compile("Indexing, please wait\\.{3}\\s*(?<progress>\\d{1,3})%\\s*");
     private static final Pattern ENCODE_TOTALFRAMES_PATTERN = Pattern.compile("Detected length: (?<frames>\\d+) frames");
     private static final Pattern VSPIPE_PROGRESS_PATTERN = Pattern.compile("Frame: (?<frame>\\d+)/.*");
-    private static final Pattern X264_PROGRESS_PATTERN1 = Pattern.compile("(?<frame>\\d+) frames:.*");
-    private static final Pattern X264_PROGRESS_PATTERN2 = Pattern.compile("\\[\\d+\\.\\d+%] (?<frame>\\d+)/\\d+ frames,.*");
+    private static final Pattern X264_X265_PROGRESS_PATTERN1 = Pattern.compile("(?<frame>\\d+) frames:.*");
+    private static final Pattern X264_X265_PROGRESS_PATTERN2 = Pattern.compile("\\[\\d+\\.\\d+%] (?<frame>\\d+)/\\d+ frames,.*");
 
     // class init params
     private final WorkerCommand command;
@@ -451,7 +451,7 @@ public class BackgroundWorker extends SwingWorker<WorkerOutcome, Void> {
 
         StringBuilder stdout = new StringBuilder();
         long totalFrames = 0;
-        List<Pattern> progressPatterns = Arrays.asList(VSPIPE_PROGRESS_PATTERN, X264_PROGRESS_PATTERN1, X264_PROGRESS_PATTERN2);
+        List<Pattern> progressPatterns = Arrays.asList(VSPIPE_PROGRESS_PATTERN, X264_X265_PROGRESS_PATTERN1, X264_X265_PROGRESS_PATTERN2);
         ProcessBuilder pb = new ProcessBuilder(args.toArray(new String[0]));
         pb.directory(new File("d:\\iso"));
         pb.redirectErrorStream(true);
