@@ -173,7 +173,7 @@ public class RipManagerImpl extends RipManager {
 
     public void analyzeTaskCallback(WorkerOutcome outcome) {
         outputTextArea.setText(outcome.getOutput());
-        if (outcome.getStatus() != WorkerOutcome.Status.OK) {
+        if (outcome.getStatus() == WorkerOutcome.Status.OK) {
             tracks = outcome.getTracks();
             populateTree();
         }
