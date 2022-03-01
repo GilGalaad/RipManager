@@ -260,8 +260,6 @@ public class BackgroundWorker extends SwingWorker<WorkerOutcome, Void> {
                 eac3to.add(String.format("%s:audio.%s.%s.orig.%s", audioTrack.getIndex(), audioTrack.getProperties().getLanguage().getCode(), audioTrack.getIndex(), codec.getOriginalExtension()));
             }
         }
-        eac3to.add("-log=NUL");
-        ret.add(eac3to);
 
         // subtitles
         List<SubtitlesTrack> subtitlesTracks = tracks.stream().filter(i -> i.getType() == TrackType.SUBTITLES).map(i -> (SubtitlesTrack) i).filter(i -> i.getDemuxOptions().isSelected()).collect(Collectors.toList());
@@ -269,6 +267,9 @@ public class BackgroundWorker extends SwingWorker<WorkerOutcome, Void> {
             eac3to.add(String.format("%s:sub.%s.%s.sup", subtitlesTrack.getIndex(), subtitlesTrack.getProperties().getLanguage().getCode(), subtitlesTrack.getIndex()));
         }
 
+        eac3to.add("-log=NUL");
+        ret.add(eac3to);
+        
         // adding ffmpeg at the end
         ret.addAll(ffmmpeg);
 
