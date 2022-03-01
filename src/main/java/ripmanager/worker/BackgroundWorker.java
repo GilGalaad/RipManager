@@ -13,6 +13,7 @@ import javax.swing.*;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.InputStreamReader;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -100,7 +101,7 @@ public class BackgroundWorker extends SwingWorker<WorkerOutcome, Void> {
 
     private WorkerOutcome doAnalyze() throws Exception {
         // analyzing file with eac3to
-        List<String> args = Arrays.asList("eac3to", source, "-log=NUL", "-progressnumbers");
+        List<String> args = Arrays.asList("eac3to", Paths.get(source).getFileName().toString(), "-log=NUL", "-progressnumbers");
         ProcessOutcome outcome = runEac3to(args);
         if (outcome.getExitCode() != 0) {
             return new WorkerOutcome(WorkerOutcome.Status.KO, output.toString(), null);
@@ -118,7 +119,7 @@ public class BackgroundWorker extends SwingWorker<WorkerOutcome, Void> {
         }
         // otherwise, looking for chapters with mkvinfo
         output.append(System.lineSeparator());
-        args = Arrays.asList("mkvinfo", source, "--ui-language", "en");
+        args = Arrays.asList("mkvinfo", Paths.get(source).getFileName().toString(), "--ui-language", "en");
         outcome = runGenericProcess(args);
         if (outcome.getExitCode() != 0) {
             return new WorkerOutcome(WorkerOutcome.Status.KO, output.toString(), null);
@@ -152,11 +153,9 @@ public class BackgroundWorker extends SwingWorker<WorkerOutcome, Void> {
                     break;
                 case "eac3to":
                     outcome = runEac3to(command);
-                    //outcome = runGenericProcess(Arrays.asList("ping", "localhost", "-n", "1"));
                     break;
                 case "ffmpeg":
                     outcome = runFFmpeg(command);
-                    //outcome = runGenericProcess(Arrays.asList("ping", "localhost", "-n", "1"));
                     break;
                 case "ffmsindex":
                     outcome = runFFMSindex(command);
@@ -210,13 +209,13 @@ public class BackgroundWorker extends SwingWorker<WorkerOutcome, Void> {
         List<List<String>> ret = new ArrayList<>();
         List<String> eac3to = new ArrayList<>();
         eac3to.add("eac3to");
-        eac3to.add(source);
+        eac3to.add(Paths.get(source).getFileName().toString());
 
         // check if chapters must be extracted with mkvextract
         ChaptersTrack chaps = tracks.stream().filter(i -> i.getType() == TrackType.CHAPTERS).map(i -> (ChaptersTrack) i).filter(i -> i.getDemuxOptions().isSelected()).findFirst().orElse(null);
         if (chaps != null) {
             if (chaps.getProperties().isUseMkvExtract()) {
-                ret.add(Arrays.asList("mkvextract", source, "chapters", "-s", "chaps.txt"));
+                ret.add(Arrays.asList("mkvextract", Paths.get(source).getFileName().toString(), "chapters", "-s", "chaps.txt"));
             } else {
                 eac3to.add(String.format("%s:%s", chaps.getIndex(), "chaps.txt"));
             }
@@ -230,10 +229,10 @@ public class BackgroundWorker extends SwingWorker<WorkerOutcome, Void> {
                 // if we are demuxing, make it more verbose to collect eta information
                 if (command == WorkerCommand.PRINT_COMMANDS) {
                     // if we are just printing commands for manual execution, make the output quieter
-                    ffmmpeg.add(Arrays.asList("ffmpeg", "-hide_banner", "-loglevel", "warning", "-stats", "-y", "-i", source, "-map", "0:v:0", "-c:v", "ffvhuff", "video_huff.mkv", "&&", "ffmsindex.exe", "video_huff.mkv"));
+                    ffmmpeg.add(Arrays.asList("ffmpeg", "-hide_banner", "-loglevel", "warning", "-stats", "-y", "-i", Paths.get(source).getFileName().toString(), "-map", "0:v:0", "-c:v", "ffvhuff", "video_huff.mkv", "&&", "ffmsindex.exe", "video_huff.mkv"));
                 } else {
                     // if we are demuxing, make it more verbose to collect eta information
-                    ffmmpeg.add(Arrays.asList("ffmpeg", "-hide_banner", "-y", "-i", source, "-map", "0:v:0", "-c:v", "ffvhuff", "video_huff.mkv"));
+                    ffmmpeg.add(Arrays.asList("ffmpeg", "-hide_banner", "-y", "-i", Paths.get(source).getFileName().toString(), "-map", "0:v:0", "-c:v", "ffvhuff", "video_huff.mkv"));
                     ffmmpeg.add(Arrays.asList("ffmsindex", "-f", "video_huff.mkv"));
                 }
             }
