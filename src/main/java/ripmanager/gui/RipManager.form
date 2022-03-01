@@ -45,29 +45,29 @@
                       <Component id="etaLabel" min="-2" pref="80" max="-2" attributes="0"/>
                   </Group>
                   <Group type="102" alignment="0" attributes="0">
-                      <Component id="treeScrollPane" min="-2" pref="713" max="-2" attributes="0"/>
+                      <Component id="treeScrollPane" max="32767" attributes="0"/>
                       <EmptySpace type="separate" max="-2" attributes="0"/>
                       <Group type="103" groupAlignment="0" max="-2" attributes="0">
                           <Component id="videoDemuxOptionsPanel" max="32767" attributes="0"/>
                           <Component id="audioDemuxOptionsPanel" max="32767" attributes="0"/>
                           <Component id="encodingOptionsPanel" max="32767" attributes="0"/>
-                          <Component id="generalDemuxOptionsPanel" alignment="1" max="32767" attributes="0"/>
+                          <Component id="generalDemuxOptionsPanel" alignment="1" min="-2" max="-2" attributes="0"/>
                       </Group>
                   </Group>
                   <Group type="102" alignment="0" attributes="0">
                       <Component id="analyzeButton" min="-2" pref="180" max="-2" attributes="0"/>
-                      <EmptySpace type="unrelated" max="32767" attributes="0"/>
+                      <EmptySpace type="unrelated" pref="39" max="32767" attributes="0"/>
                       <Component id="printCommandsButton" min="-2" pref="180" max="-2" attributes="0"/>
-                      <EmptySpace type="unrelated" max="32767" attributes="0"/>
+                      <EmptySpace type="unrelated" pref="39" max="32767" attributes="0"/>
                       <Component id="demuxButton" min="-2" pref="180" max="-2" attributes="0"/>
-                      <EmptySpace type="unrelated" max="32767" attributes="0"/>
+                      <EmptySpace type="unrelated" pref="39" max="32767" attributes="0"/>
                       <Component id="encodeButton" min="-2" pref="180" max="-2" attributes="0"/>
-                      <EmptySpace max="32767" attributes="0"/>
+                      <EmptySpace pref="38" max="32767" attributes="0"/>
                       <Component id="demuxEncodeButton" min="-2" pref="180" max="-2" attributes="0"/>
                   </Group>
               </Group>
               <EmptySpace type="separate" max="-2" attributes="0"/>
-              <Component id="outputScrollPane" pref="975" max="32767" attributes="0"/>
+              <Component id="outputScrollPane" pref="1007" max="32767" attributes="0"/>
               <EmptySpace max="-2" attributes="0"/>
           </Group>
       </Group>
@@ -217,7 +217,7 @@
               <Group type="102" alignment="0" attributes="0">
                   <EmptySpace max="-2" attributes="0"/>
                   <Component id="selectedCheckBox" min="-2" max="-2" attributes="0"/>
-                  <EmptySpace max="32767" attributes="0"/>
+                  <EmptySpace pref="192" max="32767" attributes="0"/>
               </Group>
           </Group>
         </DimensionLayout>
