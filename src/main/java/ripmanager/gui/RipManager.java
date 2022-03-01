@@ -182,6 +182,8 @@ public class RipManager extends javax.swing.JFrame {
 
         suffixLabel.setText("Suffix");
 
+        y4mCheckBox.setBorder(null);
+
         y4mLabel.setText("--y4m");
 
         javax.swing.GroupLayout encodingOptionsPanelLayout = new javax.swing.GroupLayout(encodingOptionsPanel);
@@ -220,7 +222,7 @@ public class RipManager extends javax.swing.JFrame {
                                 .addGroup(encodingOptionsPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                                         .addComponent(suffixTextField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                                         .addComponent(suffixLabel))
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                                .addGap(18, 18, 18)
                                 .addGroup(encodingOptionsPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                                         .addComponent(y4mLabel)
                                         .addComponent(y4mCheckBox))
@@ -301,8 +303,8 @@ public class RipManager extends javax.swing.JFrame {
                                                                 .addComponent(audioDemuxOptionsPanel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                                                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                                                                 .addComponent(encodingOptionsPanel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                                                .addGap(0, 594, Short.MAX_VALUE))
-                                                        .addComponent(treeScrollPane))
+                                                                .addGap(0, 0, Short.MAX_VALUE))
+                                                        .addComponent(treeScrollPane, javax.swing.GroupLayout.DEFAULT_SIZE, 1074, Short.MAX_VALUE))
                                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                                                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                                                         .addComponent(progressBar, javax.swing.GroupLayout.PREFERRED_SIZE, 25, javax.swing.GroupLayout.PREFERRED_SIZE)

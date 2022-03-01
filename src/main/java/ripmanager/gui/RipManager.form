@@ -100,9 +100,9 @@
                               <Component id="audioDemuxOptionsPanel" min="-2" max="-2" attributes="0"/>
                               <EmptySpace max="-2" attributes="0"/>
                               <Component id="encodingOptionsPanel" min="-2" max="-2" attributes="0"/>
-                              <EmptySpace min="0" pref="594" max="32767" attributes="0"/>
+                              <EmptySpace min="0" pref="0" max="32767" attributes="0"/>
                           </Group>
-                          <Component id="treeScrollPane" max="32767" attributes="0"/>
+                          <Component id="treeScrollPane" pref="1074" max="32767" attributes="0"/>
                       </Group>
                       <EmptySpace type="unrelated" max="-2" attributes="0"/>
                       <Group type="103" groupAlignment="3" attributes="0">
@@ -432,7 +432,7 @@
         </DimensionLayout>
         <DimensionLayout dim="1">
           <Group type="103" groupAlignment="0" attributes="0">
-              <Group type="102" alignment="0" attributes="0">
+              <Group type="102" attributes="0">
                   <EmptySpace max="-2" attributes="0"/>
                   <Group type="103" groupAlignment="3" attributes="0">
                       <Component id="encoderComboBox" alignment="3" min="-2" max="-2" attributes="0"/>
@@ -448,7 +448,7 @@
                       <Component id="suffixTextField" alignment="3" min="-2" max="-2" attributes="0"/>
                       <Component id="suffixLabel" alignment="3" min="-2" max="-2" attributes="0"/>
                   </Group>
-                  <EmptySpace type="unrelated" max="-2" attributes="0"/>
+                  <EmptySpace type="separate" max="-2" attributes="0"/>
                   <Group type="103" groupAlignment="0" attributes="0">
                       <Component id="y4mLabel" min="-2" max="-2" attributes="0"/>
                       <Component id="y4mCheckBox" min="-2" max="-2" attributes="0"/>
@@ -509,6 +509,11 @@
           </AuxValues>
         </Component>
         <Component class="javax.swing.JCheckBox" name="y4mCheckBox">
+          <Properties>
+            <Property name="border" type="javax.swing.border.Border" editor="org.netbeans.modules.form.editors2.BorderEditor">
+              <Border info="null"/>
+            </Property>
+          </Properties>
           <AuxValues>
             <AuxValue name="JavaCodeGenerator_VariableModifier" type="java.lang.Integer" value="4"/>
           </AuxValues>
