@@ -456,13 +456,11 @@ public class BackgroundWorker extends SwingWorker<WorkerOutcome, Void> {
         pb.directory(new File("d:\\iso"));
         pb.redirectErrorStream(true);
         long startTime = System.nanoTime();
+        long startTime2ndPass = 0;
         Process p = pb.start();
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()))) {
             String line;
             while ((line = reader.readLine()) != null) {
-                if (line.contains("evaluation")) {
-                    log.info(line);
-                }
                 if (isCancelled()) {
                     log.info("Cancelling execution and killing children processes");
                     p.descendants().forEachOrdered(ProcessHandle::destroyForcibly);
@@ -472,6 +470,10 @@ public class BackgroundWorker extends SwingWorker<WorkerOutcome, Void> {
                 if (m.matches()) {
                     totalFrames = Long.parseLong(m.group("frames"));
                 }
+                if (encodingOptions.isY4m() && line.startsWith("y4m [info]:")) {
+                    startTime2ndPass = System.nanoTime();
+                    setProgress(0);
+                }
                 Matcher pm = getFirstMatcherForMultiplePatterns(line, progressPatterns);
                 if (pm != null) {
                     long currentFrame = Long.parseLong(pm.group("frame"));
@@ -479,7 +481,7 @@ public class BackgroundWorker extends SwingWorker<WorkerOutcome, Void> {
                         int progress = calcPercent(currentFrame, totalFrames);
                         if (progress != getProgress()) {
                             setProgress(Math.min(progress, 100));
-                            firePropertyChange("eta", null, calcEta(startTime, getProgress()));
+                            firePropertyChange("eta", null, calcEta(encodingOptions.isY4m() && startTime2ndPass != 0 ? startTime2ndPass : startTime, getProgress()));
                         }
                     }
                 }
