@@ -172,14 +172,15 @@ public class RipManagerImpl extends RipManager {
     }
 
     public void analyzeTaskCallback(WorkerOutcome outcome) {
-        endBackgroundTask();
         outputTextArea.setText(outcome.getOutput());
         if (outcome.getStatus() != WorkerOutcome.Status.OK) {
-            JOptionPane.showMessageDialog(this, "Process completed with errors", "Error", JOptionPane.ERROR_MESSAGE);
-            return;
+            tracks = outcome.getTracks();
+            populateTree();
         }
-        tracks = outcome.getTracks();
-        populateTree();
+        endBackgroundTask();
+        if (outcome.getStatus() != WorkerOutcome.Status.OK) {
+            JOptionPane.showMessageDialog(this, "Process completed with errors", "Error", JOptionPane.ERROR_MESSAGE);
+        }
     }
 
     public void printCommandsButtonClicked() {
@@ -200,8 +201,8 @@ public class RipManagerImpl extends RipManager {
     }
 
     public void printCommandsTaskCallback(WorkerOutcome outcome) {
-        endBackgroundTask();
         outputTextArea.setText(outcome.getOutput());
+        endBackgroundTask();
         if (outcome.getStatus() != WorkerOutcome.Status.OK) {
             JOptionPane.showMessageDialog(this, "Process completed with errors", "Error", JOptionPane.ERROR_MESSAGE);
         }
@@ -225,8 +226,8 @@ public class RipManagerImpl extends RipManager {
     }
 
     public void demuxTaskCallback(WorkerOutcome outcome) {
-        endBackgroundTask();
         outputTextArea.setText(outcome.getOutput());
+        endBackgroundTask();
         if (outcome.getStatus() != WorkerOutcome.Status.OK) {
             JOptionPane.showMessageDialog(this, "Process completed with errors", "Error", JOptionPane.ERROR_MESSAGE);
         }
@@ -250,8 +251,8 @@ public class RipManagerImpl extends RipManager {
     }
 
     public void encodeTaskCallback(WorkerOutcome outcome) {
-        endBackgroundTask();
         outputTextArea.setText(outcome.getOutput());
+        endBackgroundTask();
         if (outcome.getStatus() != WorkerOutcome.Status.OK) {
             JOptionPane.showMessageDialog(this, "Process completed with errors", "Error", JOptionPane.ERROR_MESSAGE);
         }
@@ -275,8 +276,8 @@ public class RipManagerImpl extends RipManager {
     }
 
     public void demuxEncodeTaskCallback(WorkerOutcome outcome) {
-        endBackgroundTask();
         outputTextArea.setText(outcome.getOutput());
+        endBackgroundTask();
         if (outcome.getStatus() != WorkerOutcome.Status.OK) {
             JOptionPane.showMessageDialog(this, "Process completed with errors", "Error", JOptionPane.ERROR_MESSAGE);
         }
