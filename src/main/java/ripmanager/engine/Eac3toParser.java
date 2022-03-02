@@ -18,7 +18,7 @@ public class Eac3toParser {
     private static final Pattern LINE_SPLIT_PATTERN = Pattern.compile("\\R");
     private static final Pattern TRACK_PATTERN = Pattern.compile("^(?<index>\\d+): (?<content>.+)$");
     private static final Pattern VIDEO_PATTERN = Pattern.compile("^(?<codec>(h264/AVC|h265/HEVC|MPEG2|VC-1)), .*$");
-    private static final Pattern AUDIO_PATTERN = Pattern.compile("^(?<codec>(.+?)),\\s(?<lang>.+?),\\s(?<channels>\\d+\\.\\d+)\\s+(\\(strange setup\\) )?channels,.+$");
+    private static final Pattern AUDIO_PATTERN = Pattern.compile("^(?<codec>(.+?)),\\s(?<lang>.+?),\\s(?<channels>\\d+)[/.](?<subchannels>\\d+)\\s+(\\(strange setup\\) )?channels,.+$");
     private static final Pattern SUBTITLE_PATTERN = Pattern.compile("^Subtitle\\s+\\((?<codec>PGS|SRT|VobSub)\\),\\s+(?<lang>.+?)(,.+)?$");
     private static final Pattern CHAPTERS_PATTERN = Pattern.compile("^Chapters,\\s+\\d+\\s+chapters$");
 
@@ -116,10 +116,10 @@ public class Eac3toParser {
                 if (codec == null) {
                     throw new RuntimeException("Unsupported audio codec for line: " + line);
                 }
-                int channels = Integer.parseInt(audm.group("channels").split("\\.")[0]) + Integer.parseInt(audm.group("channels").split("\\.")[1]);
+                int channels = Integer.parseInt(audm.group("channels")) + Integer.parseInt(audm.group("subchannels"));
                 boolean hasCore = content.contains("(core:") || content.contains("(embedded:");
                 String[] split = line.split(",");
-                String label = split[0].trim() + ", " + split[1].trim() + ", " + audm.group("channels") + " channels";
+                String label = split[0].trim() + ", " + split[1].trim() + ", " + channels + " channels";
                 if (split[3].contains("kbps")) {
                     label += ", " + split[3].trim();
                 }
