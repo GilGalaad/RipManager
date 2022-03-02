@@ -119,16 +119,21 @@ public class RipManagerImpl extends RipManager {
         UIManager.put("FileChooser.readOnly", Boolean.TRUE);
         JFileChooser fc;
         if (!isEmpty(sourceTextField.getText()) && Files.exists(Paths.get(sourceTextField.getText()).getParent())) {
-            fc = new JFileChooser(Paths.get(sourceTextField.getText()).getParent().toAbsolutePath().toFile());
+            // try directory of the selected file first
+            fc = new JFileChooser(Paths.get(sourceTextField.getText()).getParent().toFile());
+        } else if (!isEmpty(sourceTextField.getText()) && Files.exists(Paths.get(sourceTextField.getText()).getParent().getParent())) {
+            // try parent directory of the selected file
+            fc = new JFileChooser(Paths.get(sourceTextField.getText()).getParent().getParent().toFile());
         } else {
+            // fallback to process current dir
             fc = new JFileChooser(Paths.get("").toAbsolutePath().toFile());
         }
         fc.setFileSelectionMode(JFileChooser.FILES_ONLY);
         fc.setMultiSelectionEnabled(false);
         int ret = fc.showOpenDialog(this);
         if (ret == JFileChooser.APPROVE_OPTION) {
+            source = fc.getSelectedFile().toPath();
             sourceTextField.setText(source.toString());
-            source = fc.getSelectedFile().getAbsoluteFile().toPath();
             // clear ui for changed input file
             tracks = null;
             trackTree.setModel(null);
