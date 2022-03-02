@@ -15,8 +15,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.beans.PropertyChangeEvent;
-import java.io.File;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 
@@ -26,6 +26,8 @@ import static ripmanager.common.CommonUtils.isEmpty;
 @Log4j2
 public class RipManagerImpl extends RipManager {
 
+    private static final String DEFAULT_ETA = "ETA: 00:00:00";
+    private static final String DEFAULT_SOURCE = "D:\\iso\\video.mkv";
     private static final String VIDEO_CATEGORY_LABEL = "Video streams";
     private static final String AUDIO_CATEGORY_LABEL = "Audio streams";
     private static final String SUBTITLES_CATEGORY_LABEL = "Subtitles";
@@ -36,18 +38,18 @@ public class RipManagerImpl extends RipManager {
     private static final Icon CHAPTERS_CATEGORY_ICON = new ImageIcon(RipManagerImpl.class.getResource("/icons/chapters.png"));
     private static final Icon SELECTED_YES_ICON = new ImageIcon(RipManagerImpl.class.getResource("/icons/yes.png"));
     private static final Icon SELECTED_NO_ICON = new ImageIcon(RipManagerImpl.class.getResource("/icons/no.png"));
-    public static final String ETA_DEFAULT = "ETA: 00:00:00";
 
     private boolean running = false;
     private BackgroundWorker worker;
+    private Path source = Paths.get(DEFAULT_SOURCE);
     private List<Track> tracks;
     private final EncodingOptions encodingOptions = new EncodingOptions();
 
     public RipManagerImpl() {
         super();
 
-        sourceTextField.setText("D:\\iso\\video.mkv");
-        etaLabel.setText(ETA_DEFAULT);
+        sourceTextField.setText(DEFAULT_SOURCE);
+        etaLabel.setText(DEFAULT_ETA);
 
         sourceButton.addActionListener(evt -> sourceButtonClicked());
         analyzeButton.addActionListener(evt -> analyzeButtonClicked());
@@ -88,7 +90,7 @@ public class RipManagerImpl extends RipManager {
         demuxEncodeButton.setEnabled(false);
         trackTree.setEnabled(false);
         progressBar.setValue(0);
-        etaLabel.setText(ETA_DEFAULT);
+        etaLabel.setText(DEFAULT_ETA);
         disableDemuxOptions();
         disableEncodingOptions();
     }
@@ -108,7 +110,7 @@ public class RipManagerImpl extends RipManager {
         demuxEncodeButton.setText("Demux & Encode");
         trackTree.setEnabled(true);
         progressBar.setValue(0);
-        etaLabel.setText(ETA_DEFAULT);
+        etaLabel.setText(DEFAULT_ETA);
         configureDemuxOptions();
         enableEncodingOptions();
     }
@@ -125,8 +127,8 @@ public class RipManagerImpl extends RipManager {
         fc.setMultiSelectionEnabled(false);
         int ret = fc.showOpenDialog(this);
         if (ret == JFileChooser.APPROVE_OPTION) {
-            File selectedDir = fc.getSelectedFile();
-            sourceTextField.setText(selectedDir.toString());
+            sourceTextField.setText(source.toString());
+            source = fc.getSelectedFile().getAbsoluteFile().toPath();
             // clear ui for changed input file
             tracks = null;
             trackTree.setModel(null);
@@ -145,7 +147,7 @@ public class RipManagerImpl extends RipManager {
                     outputTextArea.setText((String) evt.getNewValue());
                     break;
                 case "eta":
-                    etaLabel.setText(evt.getNewValue() == null ? ETA_DEFAULT : "ETA: " + formatInterval((Long) evt.getNewValue()));
+                    etaLabel.setText(evt.getNewValue() == null ? DEFAULT_ETA : "ETA: " + formatInterval((Long) evt.getNewValue()));
                     break;
             }
         }
@@ -153,6 +155,10 @@ public class RipManagerImpl extends RipManager {
 
     public void analyzeButtonClicked() {
         if (!running) {
+            if (!Files.isReadable(source)) {
+                JOptionPane.showMessageDialog(this, "Source files does not exist or is not accessible", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
             startBackgroundTask();
             // mutating button
             analyzeButton.setText("Abort");
@@ -163,7 +169,7 @@ public class RipManagerImpl extends RipManager {
             outputTextArea.setText(null);
             clearDemuxOptions();
             // starting worker
-            worker = new BackgroundWorker(WorkerCommand.ANALYZE, sourceTextField.getText(), null, encodingOptions, this);
+            worker = new BackgroundWorker(WorkerCommand.ANALYZE, source, null, encodingOptions, this);
             worker.addPropertyChangeListener(this::workerPropertyChanged);
             worker.execute();
         } else {
@@ -192,7 +198,7 @@ public class RipManagerImpl extends RipManager {
             // clearing ui
             outputTextArea.setText(null);
             // starting worker
-            worker = new BackgroundWorker(WorkerCommand.PRINT_COMMANDS, sourceTextField.getText(), tracks, encodingOptions, this);
+            worker = new BackgroundWorker(WorkerCommand.PRINT_COMMANDS, source, tracks, encodingOptions, this);
             worker.addPropertyChangeListener(this::workerPropertyChanged);
             worker.execute();
         } else {
@@ -217,7 +223,7 @@ public class RipManagerImpl extends RipManager {
             // clearing ui
             outputTextArea.setText(null);
             // starting worker
-            worker = new BackgroundWorker(WorkerCommand.DEMUX, sourceTextField.getText(), tracks, encodingOptions, this);
+            worker = new BackgroundWorker(WorkerCommand.DEMUX, source, tracks, encodingOptions, this);
             worker.addPropertyChangeListener(this::workerPropertyChanged);
             worker.execute();
         } else {
@@ -242,7 +248,7 @@ public class RipManagerImpl extends RipManager {
             // clearing ui
             outputTextArea.setText(null);
             // starting worker
-            worker = new BackgroundWorker(WorkerCommand.ENCODE, sourceTextField.getText(), tracks, encodingOptions, this);
+            worker = new BackgroundWorker(WorkerCommand.ENCODE, source, tracks, encodingOptions, this);
             worker.addPropertyChangeListener(this::workerPropertyChanged);
             worker.execute();
         } else {
@@ -267,7 +273,7 @@ public class RipManagerImpl extends RipManager {
             // clearing ui
             outputTextArea.setText(null);
             // starting worker
-            worker = new BackgroundWorker(WorkerCommand.DEMUX_ENCODE, sourceTextField.getText(), tracks, encodingOptions, this);
+            worker = new BackgroundWorker(WorkerCommand.DEMUX_ENCODE, source, tracks, encodingOptions, this);
             worker.addPropertyChangeListener(this::workerPropertyChanged);
             worker.execute();
         } else {

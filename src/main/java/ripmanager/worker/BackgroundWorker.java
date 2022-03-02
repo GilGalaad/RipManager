@@ -11,9 +11,8 @@ import ripmanager.gui.RipManagerImpl;
 
 import javax.swing.*;
 import java.io.BufferedReader;
-import java.io.File;
 import java.io.InputStreamReader;
-import java.nio.file.Paths;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -41,7 +40,7 @@ public class BackgroundWorker extends SwingWorker<WorkerOutcome, Void> {
 
     // class init params
     private final WorkerCommand command;
-    private final String source;
+    private final Path source;
     private final List<Track> tracks;
     private final EncodingOptions encodingOptions;
     private final RipManagerImpl frame;
@@ -101,7 +100,7 @@ public class BackgroundWorker extends SwingWorker<WorkerOutcome, Void> {
 
     private WorkerOutcome doAnalyze() throws Exception {
         // analyzing file with eac3to
-        List<String> args = Arrays.asList("eac3to", Paths.get(source).getFileName().toString(), "-log=NUL", "-progressnumbers");
+        List<String> args = Arrays.asList("eac3to", source.getFileName().toString(), "-log=NUL", "-progressnumbers");
         ProcessOutcome outcome = runEac3to(args);
         if (outcome.getExitCode() != 0) {
             return new WorkerOutcome(WorkerOutcome.Status.KO, output.toString(), null);
@@ -119,7 +118,7 @@ public class BackgroundWorker extends SwingWorker<WorkerOutcome, Void> {
         }
         // otherwise, looking for chapters with mkvinfo
         output.append(System.lineSeparator());
-        args = Arrays.asList("mkvinfo", Paths.get(source).getFileName().toString(), "--ui-language", "en");
+        args = Arrays.asList("mkvinfo", source.getFileName().toString(), "--ui-language", "en");
         outcome = runGenericProcess(args);
         if (outcome.getExitCode() != 0) {
             return new WorkerOutcome(WorkerOutcome.Status.KO, output.toString(), null);
@@ -136,15 +135,23 @@ public class BackgroundWorker extends SwingWorker<WorkerOutcome, Void> {
 
     private WorkerOutcome doPrintCommands() {
         List<List<String>> commands = generateCommands();
+        if (commands.isEmpty()) {
+            return new WorkerOutcome(WorkerOutcome.Status.OK, "No demux command generated", null);
+        }
         List<String> lines = commands.stream().map(i -> String.join(" ", i)).collect(Collectors.toList());
         for (var line : lines) {
             output.append(line).append(System.lineSeparator());
         }
+        // finishing with an empty line to allow copy&paste on console
+        output.append(System.lineSeparator());
         return new WorkerOutcome(WorkerOutcome.Status.OK, output.toString(), null);
     }
 
     private WorkerOutcome doDemux() throws Exception {
         List<List<String>> commands = generateCommands();
+        if (commands.isEmpty()) {
+            return new WorkerOutcome(WorkerOutcome.Status.OK, "No demux command generated", null);
+        }
         for (var command : commands) {
             ProcessOutcome outcome;
             switch (command.get(0)) {
@@ -209,13 +216,13 @@ public class BackgroundWorker extends SwingWorker<WorkerOutcome, Void> {
         List<List<String>> ret = new ArrayList<>();
         List<String> eac3to = new ArrayList<>();
         eac3to.add("eac3to");
-        eac3to.add(Paths.get(source).getFileName().toString());
+        eac3to.add(source.getFileName().toString());
 
         // check if chapters must be extracted with mkvextract
         ChaptersTrack chaps = tracks.stream().filter(i -> i.getType() == TrackType.CHAPTERS).map(i -> (ChaptersTrack) i).filter(i -> i.getDemuxOptions().isSelected()).findFirst().orElse(null);
         if (chaps != null) {
             if (chaps.getProperties().isUseMkvExtract()) {
-                ret.add(Arrays.asList("mkvextract", Paths.get(source).getFileName().toString(), "chapters", "-s", "chaps.txt"));
+                ret.add(Arrays.asList("mkvextract", source.getFileName().toString(), "chapters", "-s", "chaps.txt"));
             } else {
                 eac3to.add(String.format("%s:%s", chaps.getIndex(), "chaps.txt"));
             }
@@ -223,18 +230,16 @@ public class BackgroundWorker extends SwingWorker<WorkerOutcome, Void> {
 
         // video tracks
         List<List<String>> ffmmpeg = new ArrayList<>();
-        VideoTrack video = tracks.stream().filter(i -> i.getType() == TrackType.VIDEO).map(i -> (VideoTrack) i).filter(i -> i.getDemuxOptions().isSelected()).findFirst().orElse(null);
+        VideoTrack video = tracks.stream().filter(i -> i.getType() == TrackType.VIDEO).map(i -> (VideoTrack) i).filter(i -> i.getDemuxOptions().isSelected() && i.getDemuxOptions().isConvertToHuff()).findFirst().orElse(null);
         if (video != null) {
-            if (video.getDemuxOptions().isConvertToHuff()) {
+            // if we are demuxing, make it more verbose to collect eta information
+            if (command == WorkerCommand.PRINT_COMMANDS) {
+                // if we are just printing commands for manual execution, make the output quieter and keep ffmsindex on the same line
+                ffmmpeg.add(Arrays.asList("ffmpeg", "-hide_banner", "-loglevel", "warning", "-stats", "-y", "-i", source.getFileName().toString(), "-map", "0:v:0", "-c:v", "ffvhuff", "video_huff.mkv", "&&", "ffmsindex.exe", "video_huff.mkv"));
+            } else {
                 // if we are demuxing, make it more verbose to collect eta information
-                if (command == WorkerCommand.PRINT_COMMANDS) {
-                    // if we are just printing commands for manual execution, make the output quieter
-                    ffmmpeg.add(Arrays.asList("ffmpeg", "-hide_banner", "-loglevel", "warning", "-stats", "-y", "-i", Paths.get(source).getFileName().toString(), "-map", "0:v:0", "-c:v", "ffvhuff", "video_huff.mkv", "&&", "ffmsindex.exe", "video_huff.mkv"));
-                } else {
-                    // if we are demuxing, make it more verbose to collect eta information
-                    ffmmpeg.add(Arrays.asList("ffmpeg", "-hide_banner", "-y", "-i", Paths.get(source).getFileName().toString(), "-map", "0:v:0", "-c:v", "ffvhuff", "video_huff.mkv"));
-                    ffmmpeg.add(Arrays.asList("ffmsindex", "-f", "video_huff.mkv"));
-                }
+                ffmmpeg.add(Arrays.asList("ffmpeg", "-hide_banner", "-y", "-i", source.getFileName().toString(), "-map", "0:v:0", "-c:v", "ffvhuff", "video_huff.mkv"));
+                ffmmpeg.add(Arrays.asList("ffmsindex", "-f", "video_huff.mkv"));
             }
         }
 
@@ -276,16 +281,15 @@ public class BackgroundWorker extends SwingWorker<WorkerOutcome, Void> {
             eac3to.add(String.format("%s:sub.%s.%s.sup", subtitlesTrack.getIndex(), subtitlesTrack.getProperties().getLanguage().getCode(), subtitlesTrack.getIndex()));
         }
 
-        eac3to.add("-log=NUL");
-        ret.add(eac3to);
+        // add eac3to to commands only we are actually exctracting someting
+        if ((chaps != null && !chaps.getProperties().isUseMkvExtract()) || video != null || !audioTracks.isEmpty() || !subtitlesTracks.isEmpty()) {
+            eac3to.add("-log=NUL");
+            ret.add(eac3to);
+        }
 
         // adding ffmpeg at the end
         ret.addAll(ffmmpeg);
 
-        // ip printing commands, finishing with an empty line
-        if (command == WorkerCommand.PRINT_COMMANDS) {
-            ret.add(Arrays.asList("", System.lineSeparator()));
-        }
         return ret;
     }
 
@@ -294,13 +298,13 @@ public class BackgroundWorker extends SwingWorker<WorkerOutcome, Void> {
         output.append("Running: ").append(String.join(" ", args)).append(System.lineSeparator());
         firePropertyChange("output", null, output.toString());
 
-        args = wrapCommand(args);
+        args = wrapCommandForIdlePriority(args);
         args.add("-progressnumbers");
         log.info("Actual command line: {}", String.join(" ", args));
 
         StringBuilder stdout = new StringBuilder();
         ProcessBuilder pb = new ProcessBuilder(args.toArray(new String[0]));
-        pb.directory(new File("d:\\iso"));
+        pb.directory(source.getParent().toFile());
         pb.redirectErrorStream(true);
         long startTime = System.nanoTime();
         Process p = pb.start();
@@ -341,13 +345,13 @@ public class BackgroundWorker extends SwingWorker<WorkerOutcome, Void> {
         output.append("Running: ").append(String.join(" ", args)).append(System.lineSeparator());
         firePropertyChange("output", null, output.toString());
 
-        args = wrapCommand(args);
+        args = wrapCommandForIdlePriority(args);
         log.info("Actual command line: {}", String.join(" ", args));
 
         StringBuilder stdout = new StringBuilder();
         long duration = 0;
         ProcessBuilder pb = new ProcessBuilder(args.toArray(new String[0]));
-        pb.directory(new File("d:\\iso"));
+        pb.directory(source.getParent().toFile());
         pb.redirectErrorStream(true);
         long startTime = System.nanoTime();
         Process p = pb.start();
@@ -409,7 +413,7 @@ public class BackgroundWorker extends SwingWorker<WorkerOutcome, Void> {
 
         StringBuilder stdout = new StringBuilder();
         ProcessBuilder pb = new ProcessBuilder(args.toArray(new String[0]));
-        pb.directory(new File("d:\\iso"));
+        pb.directory(source.getParent().toFile());
         pb.redirectErrorStream(true);
         long startTime = System.nanoTime();
         Process p = pb.start();
@@ -457,7 +461,7 @@ public class BackgroundWorker extends SwingWorker<WorkerOutcome, Void> {
         long totalFrames = 0;
         List<Pattern> progressPatterns = Arrays.asList(VSPIPE_PROGRESS_PATTERN, X264_X265_PROGRESS_PATTERN1, X264_X265_PROGRESS_PATTERN2);
         ProcessBuilder pb = new ProcessBuilder(args.toArray(new String[0]));
-        pb.directory(new File("d:\\iso"));
+        pb.directory(source.getParent().toFile());
         pb.redirectErrorStream(true);
         long startTime = System.nanoTime();
         long startTime2ndPass = 0;
@@ -519,7 +523,7 @@ public class BackgroundWorker extends SwingWorker<WorkerOutcome, Void> {
 
         StringBuilder stdout = new StringBuilder();
         ProcessBuilder pb = new ProcessBuilder(args.toArray(new String[0]));
-        pb.directory(new File("d:\\iso"));
+        pb.directory(source.getParent().toFile());
         pb.redirectErrorStream(true);
         long startTime = System.nanoTime();
         Process p = pb.start();
@@ -545,7 +549,7 @@ public class BackgroundWorker extends SwingWorker<WorkerOutcome, Void> {
         return new ProcessOutcome(p.exitValue(), stdout.toString());
     }
 
-    private List<String> wrapCommand(List<String> args) {
+    private List<String> wrapCommandForIdlePriority(List<String> args) {
         List<String> wrappedArgs = new ArrayList<>(args.size() + 2);
         wrappedArgs.add("python");
         wrappedArgs.add("C:\\dvd-rip\\python\\run_cmd.py");
