@@ -400,10 +400,27 @@ public class RipManagerImpl extends RipManager {
         return new MouseListener() {
             @Override
             public void mouseClicked(MouseEvent e) {
-                if (trackTree.getRowForLocation(e.getX(), e.getY()) == -1) {
+                int selectedRow = trackTree.getRowForLocation(e.getX(), e.getY());
+                if (selectedRow == -1) {
                     trackTree.clearSelection();
                     disableDemuxOptions();
                     clearDemuxOptions();
+                } else if (e.getClickCount() == 2) {
+                    DefaultMutableTreeNode node = (DefaultMutableTreeNode) trackTree.getLastSelectedPathComponent();
+                    if (node != null) {
+                        Object userObject = node.getUserObject();
+                        if (userObject instanceof VideoTrack) {
+                            ((VideoTrack) userObject).getDemuxOptions().setSelected(!((VideoTrack) userObject).getDemuxOptions().isSelected());
+                        } else if (userObject instanceof AudioTrack) {
+                            ((AudioTrack) userObject).getDemuxOptions().setSelected(!((AudioTrack) userObject).getDemuxOptions().isSelected());
+                        } else if (userObject instanceof SubtitlesTrack) {
+                            ((SubtitlesTrack) userObject).getDemuxOptions().setSelected(!((SubtitlesTrack) userObject).getDemuxOptions().isSelected());
+                        } else if (userObject instanceof ChaptersTrack) {
+                            ((ChaptersTrack) userObject).getDemuxOptions().setSelected(!((ChaptersTrack) userObject).getDemuxOptions().isSelected());
+                        }
+                        ((DefaultTreeModel) trackTree.getModel()).nodeChanged(node);
+                        configureDemuxOptions();
+                    }
                 }
             }
 
