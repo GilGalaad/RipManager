@@ -31,7 +31,7 @@ public enum AudioCodec {
 
     public static AudioCodec findByName(String name) {
         for (AudioCodec codec : values()) {
-            if (name != null && codec.names.stream().map(i -> i.toLowerCase()).collect(Collectors.toSet()).contains(name.toLowerCase())) {
+            if (name != null && codec.names.stream().map(String::toLowerCase).collect(Collectors.toSet()).contains(name.toLowerCase())) {
                 return codec;
             }
         }

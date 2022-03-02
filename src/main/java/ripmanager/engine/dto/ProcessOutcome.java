@@ -1,4 +1,4 @@
-package ripmanager.worker;
+package ripmanager.engine.dto;
 
 import lombok.Data;
 

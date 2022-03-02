@@ -2,10 +2,9 @@ package ripmanager.gui;
 
 import lombok.extern.log4j.Log4j2;
 import ripmanager.common.ExceptionUtils;
+import ripmanager.engine.BackgroundWorker;
 import ripmanager.engine.dto.*;
 import ripmanager.engine.enums.Encoder;
-import ripmanager.worker.BackgroundWorker;
-import ripmanager.worker.WorkerOutcome;
 
 import javax.swing.*;
 import javax.swing.event.*;

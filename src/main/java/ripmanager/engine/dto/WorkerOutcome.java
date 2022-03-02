@@ -1,7 +1,6 @@
-package ripmanager.worker;
+package ripmanager.engine.dto;
 
 import lombok.Data;
-import ripmanager.engine.dto.Track;
 
 import java.util.List;
 

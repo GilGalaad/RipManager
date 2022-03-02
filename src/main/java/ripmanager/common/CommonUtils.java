@@ -13,10 +13,6 @@ public class CommonUtils {
         return str == null || str.trim().equals("");
     }
 
-    public static String ltrim(String s) {
-        return s.replaceAll("^\\s+", "");
-    }
-
     public static String rtrim(String s) {
         return s.replaceAll("\\s+$", "");
     }
@@ -42,7 +38,7 @@ public class CommonUtils {
     }
 
     public static long parseInterval(String interval) {
-        String[] split = interval.split("[:\\.]");
+        String[] split = interval.split("[:.]");
         long hours = Long.parseLong(split[0]);
         long minutes = Long.parseLong(split[1]);
         long seconds = Long.parseLong(split[2]);
