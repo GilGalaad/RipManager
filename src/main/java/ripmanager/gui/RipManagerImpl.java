@@ -118,12 +118,8 @@ public class RipManagerImpl extends RipManager {
     private void sourceButtonClicked() {
         UIManager.put("FileChooser.readOnly", Boolean.TRUE);
         JFileChooser fc;
-        if (!isEmpty(sourceTextField.getText()) && Files.exists(Paths.get(sourceTextField.getText()).getParent())) {
-            // try directory of the selected file first
-            fc = new JFileChooser(Paths.get(sourceTextField.getText()).getParent().toFile());
-        } else if (!isEmpty(sourceTextField.getText()) && Files.exists(Paths.get(sourceTextField.getText()).getParent().getParent())) {
-            // try parent directory of the selected file
-            fc = new JFileChooser(Paths.get(sourceTextField.getText()).getParent().getParent().toFile());
+        if (!isEmpty(sourceTextField.getText())) {
+            fc = new JFileChooser(getDeepestExistingDirectory(Paths.get(sourceTextField.getText())).toFile());
         } else {
             // fallback to process current dir
             fc = new JFileChooser(Paths.get("").toAbsolutePath().toFile());
@@ -140,6 +136,17 @@ public class RipManagerImpl extends RipManager {
             outputTextArea.setText(null);
             clearDemuxOptions();
         }
+    }
+
+    private Path getDeepestExistingDirectory(Path path) {
+        Path curPath = path;
+        while (curPath.getParent() != null) {
+            curPath = path.getParent();
+            if (Files.exists(curPath) && Files.isDirectory(curPath)) {
+                return curPath;
+            }
+        }
+        return Paths.get("").toAbsolutePath();
     }
 
     private void workerPropertyChanged(PropertyChangeEvent evt) {
