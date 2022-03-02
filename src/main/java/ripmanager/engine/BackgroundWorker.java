@@ -311,6 +311,7 @@ public class BackgroundWorker extends SwingWorker<WorkerOutcome, Void> {
         pb.directory(source.getParent().toFile());
         pb.redirectErrorStream(true);
         long startTime = System.nanoTime();
+        long startTime2ndPass = 0;
         Process p = pb.start();
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()))) {
             String line;
@@ -320,12 +321,16 @@ public class BackgroundWorker extends SwingWorker<WorkerOutcome, Void> {
                     p.descendants().forEachOrdered(ProcessHandle::destroyForcibly);
                     throw new RuntimeException();
                 }
+                if (line.contains("Starting 2nd pass...")) {
+                    startTime2ndPass = System.nanoTime();
+                    setProgress(0);
+                }
                 Matcher m = EAC3TO_PROGRESS_PATTERN.matcher(line);
                 if (m.matches()) {
                     if (command == WorkerCommand.ANALYZE || line.contains("process")) {
                         int progress = Integer.parseInt(m.group("progress"));
                         setProgress(Math.min(progress, 100));
-                        firePropertyChange("eta", null, calcEta(startTime, progress));
+                        firePropertyChange("eta", null, calcEta(startTime2ndPass != 0 ? startTime2ndPass : startTime, getProgress()));
                     }
                     continue;
                 }
@@ -507,7 +512,7 @@ public class BackgroundWorker extends SwingWorker<WorkerOutcome, Void> {
                         int progress = calcPercent(currentFrame, totalFrames);
                         if (progress != getProgress()) {
                             setProgress(Math.min(progress, 100));
-                            firePropertyChange("eta", null, calcEta(encodingOptions.isY4m() && startTime2ndPass != 0 ? startTime2ndPass : startTime, getProgress()));
+                            firePropertyChange("eta", null, calcEta(startTime2ndPass != 0 ? startTime2ndPass : startTime, getProgress()));
                         }
                     }
                 }
