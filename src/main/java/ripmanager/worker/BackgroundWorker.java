@@ -16,6 +16,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.regex.Matcher;
@@ -230,16 +231,20 @@ public class BackgroundWorker extends SwingWorker<WorkerOutcome, Void> {
 
         // video tracks
         List<List<String>> ffmmpeg = new ArrayList<>();
-        VideoTrack video = tracks.stream().filter(i -> i.getType() == TrackType.VIDEO).map(i -> (VideoTrack) i).filter(i -> i.getDemuxOptions().isSelected() && i.getDemuxOptions().isConvertToHuff()).findFirst().orElse(null);
+        VideoTrack video = tracks.stream().filter(i -> i.getType() == TrackType.VIDEO).map(i -> (VideoTrack) i).filter(i -> i.getDemuxOptions().isSelected()).findFirst().orElse(null);
         if (video != null) {
-            // if we are demuxing, make it more verbose to collect eta information
-            if (command == WorkerCommand.PRINT_COMMANDS) {
-                // if we are just printing commands for manual execution, make the output quieter and keep ffmsindex on the same line
-                ffmmpeg.add(Arrays.asList("ffmpeg", "-hide_banner", "-loglevel", "warning", "-stats", "-y", "-i", source.getFileName().toString(), "-map", "0:v:0", "-c:v", "ffvhuff", "video_huff.mkv", "&&", "ffmsindex.exe", "video_huff.mkv"));
+            if (video.getDemuxOptions().isConvertToHuff()) {
+                if (command == WorkerCommand.PRINT_COMMANDS) {
+                    // if we are just printing commands for manual execution, make the output quieter and keep ffmsindex on the same line
+                    ffmmpeg.add(Arrays.asList("ffmpeg", "-hide_banner", "-loglevel", "warning", "-stats", "-y", "-i", source.getFileName().toString(), "-map", "0:v:0", "-c:v", "ffvhuff", "video_huff.mkv", "&&", "ffmsindex.exe", "video_huff.mkv"));
+                } else {
+                    // if we are demuxing, make it more verbose to collect eta information and put ffmsindex on dedicate line
+                    ffmmpeg.add(Arrays.asList("ffmpeg", "-hide_banner", "-y", "-i", source.getFileName().toString(), "-map", "0:v:0", "-c:v", "ffvhuff", "video_huff.mkv"));
+                    ffmmpeg.add(Arrays.asList("ffmsindex", "-f", "video_huff.mkv"));
+                }
             } else {
-                // if we are demuxing, make it more verbose to collect eta information
-                ffmmpeg.add(Arrays.asList("ffmpeg", "-hide_banner", "-y", "-i", source.getFileName().toString(), "-map", "0:v:0", "-c:v", "ffvhuff", "video_huff.mkv"));
-                ffmmpeg.add(Arrays.asList("ffmsindex", "-f", "video_huff.mkv"));
+                // if we don't need intermediate ffvhuff file, index the original
+                ffmmpeg.add(Arrays.asList("ffmsindex", "-f", source.getFileName().toString()));
             }
         }
 
@@ -282,7 +287,7 @@ public class BackgroundWorker extends SwingWorker<WorkerOutcome, Void> {
         }
 
         // add eac3to to commands only we are actually exctracting someting
-        if ((chaps != null && !chaps.getProperties().isUseMkvExtract()) || video != null || !audioTracks.isEmpty() || !subtitlesTracks.isEmpty()) {
+        if (eac3to.size() > 2) {
             eac3to.add("-log=NUL");
             ret.add(eac3to);
         }
@@ -463,6 +468,16 @@ public class BackgroundWorker extends SwingWorker<WorkerOutcome, Void> {
         ProcessBuilder pb = new ProcessBuilder(args.toArray(new String[0]));
         pb.directory(source.getParent().toFile());
         pb.redirectErrorStream(true);
+        // customizing environment to provide custom path to vapoursynth.vpy and encode.py, only if we have analyze data
+        if (tracks != null && !tracks.isEmpty()) {
+            Map<String, String> env = pb.environment();
+            env.put("ENC_SOURCE_FILE", source.toString());
+            if (tracks.stream().filter(i -> i.getType() == TrackType.VIDEO).map(i -> (VideoTrack) i).anyMatch(i -> i.getDemuxOptions().isSelected() && i.getDemuxOptions().isConvertToHuff())) {
+                env.put("VPY_SOURCE_FILE", source.resolveSibling("video_huff.mkv").toString());
+            } else {
+                env.put("VPY_SOURCE_FILE", source.toString());
+            }
+        }
         long startTime = System.nanoTime();
         long startTime2ndPass = 0;
         Process p = pb.start();
@@ -477,6 +492,10 @@ public class BackgroundWorker extends SwingWorker<WorkerOutcome, Void> {
                 Matcher m = ENCODE_TOTALFRAMES_PATTERN.matcher(line);
                 if (m.matches()) {
                     totalFrames = Long.parseLong(m.group("frames"));
+                }
+                if (encodingOptions.isY4m() && line.startsWith("Output ")) {
+                    setProgress(100);
+                    firePropertyChange("eta", null, 0);
                 }
                 if (encodingOptions.isY4m() && line.startsWith("y4m [info]:")) {
                     startTime2ndPass = System.nanoTime();
