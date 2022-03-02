@@ -494,7 +494,7 @@ public class BackgroundWorker extends SwingWorker<WorkerOutcome, Void> {
                 }
                 if (encodingOptions.isY4m() && line.startsWith("Output ")) {
                     setProgress(100);
-                    firePropertyChange("eta", null, 0);
+                    firePropertyChange("eta", null, 0L);
                 }
                 if (encodingOptions.isY4m() && line.startsWith("y4m [info]:")) {
                     startTime2ndPass = System.nanoTime();
