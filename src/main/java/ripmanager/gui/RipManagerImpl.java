@@ -110,6 +110,9 @@ public class RipManagerImpl extends RipManager {
         demuxEncodeButton.setText("Demux & Encode");
         trackTree.setEnabled(true);
         progressBar.setValue(0);
+        if (Taskbar.isTaskbarSupported()) {
+            Taskbar.getTaskbar().setWindowProgressState(this, Taskbar.State.OFF);
+        }
         etaLabel.setText(DEFAULT_ETA);
         configureDemuxOptions();
         enableEncodingOptions();
@@ -155,6 +158,9 @@ public class RipManagerImpl extends RipManager {
             switch (evt.getPropertyName()) {
                 case "progress":
                     progressBar.setValue((Integer) evt.getNewValue());
+                    if (Taskbar.isTaskbarSupported()) {
+                        Taskbar.getTaskbar().setWindowProgressValue(this, (Integer) evt.getNewValue());
+                    }
                     break;
                 case "output":
                     outputTextArea.setText((String) evt.getNewValue());
