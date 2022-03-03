@@ -208,7 +208,6 @@ public class BackgroundWorker extends SwingWorker<WorkerOutcome, Void> {
         if (outcome.getStatus() == WorkerOutcome.Status.KO) {
             return outcome;
         }
-        output.append(System.lineSeparator());
         return doEncode();
     }
 
