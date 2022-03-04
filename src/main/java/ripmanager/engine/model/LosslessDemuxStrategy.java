@@ -1,4 +1,4 @@
-package ripmanager.engine.dto;
+package ripmanager.engine.model;
 
 public enum LosslessDemuxStrategy {
     KEEP_BOTH,

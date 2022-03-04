@@ -1,4 +1,4 @@
-package ripmanager.engine.dto;
+package ripmanager.engine.model;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;

@@ -1,15 +1,19 @@
-package ripmanager.engine.dto;
+package ripmanager.engine.model;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import ripmanager.engine.enums.AudioCodec;
 import ripmanager.engine.enums.Language;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class SubtitlesProperties {
+public class AudioProperties {
 
     private Language language;
+    private AudioCodec codec;
+    private int channels;
+    private boolean hasCore;
 
 }

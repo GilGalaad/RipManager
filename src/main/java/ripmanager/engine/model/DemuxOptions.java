@@ -1,4 +1,4 @@
-package ripmanager.engine.dto;
+package ripmanager.engine.model;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -7,8 +7,8 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class ChaptersProperties {
+public class DemuxOptions {
 
-    private boolean useMkvExtract;
+    private boolean selected;
 
 }

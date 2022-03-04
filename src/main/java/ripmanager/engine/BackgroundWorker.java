@@ -3,7 +3,7 @@ package ripmanager.engine;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import ripmanager.common.CommonUtils;
-import ripmanager.engine.dto.*;
+import ripmanager.engine.model.*;
 import ripmanager.engine.enums.AudioCodec;
 import ripmanager.engine.enums.Encoder;
 import ripmanager.gui.RipManagerImpl;
