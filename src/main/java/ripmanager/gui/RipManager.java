@@ -4,6 +4,42 @@ import ripmanager.engine.enums.Encoder;
 
 public class RipManager extends javax.swing.JFrame {
 
+    // Variables declaration - do not modify//GEN-BEGIN:variables
+    protected javax.swing.JButton analyzeButton;
+    protected javax.swing.ButtonGroup audioDemuxButtonGroup;
+    protected javax.swing.JPanel audioDemuxOptionsPanel;
+    protected javax.swing.JCheckBox convertToHuffCheckBox;
+    protected javax.swing.JLabel crfLabel;
+    protected javax.swing.JSlider crfSlider;
+    protected javax.swing.JButton demuxButton;
+    protected javax.swing.JButton demuxEncodeButton;
+    protected javax.swing.JButton encodeButton;
+    protected javax.swing.JComboBox<Encoder> encoderComboBox;
+    protected javax.swing.JLabel encoderLabel;
+    protected javax.swing.JPanel encodingOptionsPanel;
+    protected javax.swing.JLabel etaLabel;
+    protected javax.swing.JCheckBox extractCoreCheckBox;
+    protected javax.swing.JPanel generalDemuxOptionsPanel;
+    protected javax.swing.JRadioButton losslessAndLossyRadioButton;
+    protected javax.swing.JRadioButton losslessRadioButton;
+    protected javax.swing.JRadioButton lossyRadioButton;
+    protected javax.swing.JCheckBox normalizeCheckBox;
+    protected javax.swing.JScrollPane outputScrollPane;
+    protected javax.swing.JTextArea outputTextArea;
+    protected javax.swing.JButton printCommandsButton;
+    protected javax.swing.JProgressBar progressBar;
+    protected javax.swing.JCheckBox selectedCheckBox;
+    protected javax.swing.JButton sourceButton;
+    protected javax.swing.JTextField sourceTextField;
+    protected javax.swing.JLabel suffixLabel;
+    protected javax.swing.JTextField suffixTextField;
+    protected javax.swing.JTree trackTree;
+    protected javax.swing.JScrollPane treeScrollPane;
+    protected javax.swing.JPanel videoDemuxOptionsPanel;
+    protected javax.swing.JCheckBox y4mCheckBox;
+    protected javax.swing.JLabel y4mLabel;
+    // End of variables declaration//GEN-END:variables
+
     public RipManager() {
         initComponents();
     }
@@ -316,39 +352,4 @@ public class RipManager extends javax.swing.JFrame {
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
-    // Variables declaration - do not modify//GEN-BEGIN:variables
-    protected javax.swing.JButton analyzeButton;
-    protected javax.swing.ButtonGroup audioDemuxButtonGroup;
-    protected javax.swing.JPanel audioDemuxOptionsPanel;
-    protected javax.swing.JCheckBox convertToHuffCheckBox;
-    protected javax.swing.JLabel crfLabel;
-    protected javax.swing.JSlider crfSlider;
-    protected javax.swing.JButton demuxButton;
-    protected javax.swing.JButton demuxEncodeButton;
-    protected javax.swing.JButton encodeButton;
-    protected javax.swing.JComboBox<Encoder> encoderComboBox;
-    protected javax.swing.JLabel encoderLabel;
-    protected javax.swing.JPanel encodingOptionsPanel;
-    protected javax.swing.JLabel etaLabel;
-    protected javax.swing.JCheckBox extractCoreCheckBox;
-    protected javax.swing.JPanel generalDemuxOptionsPanel;
-    protected javax.swing.JRadioButton losslessAndLossyRadioButton;
-    protected javax.swing.JRadioButton losslessRadioButton;
-    protected javax.swing.JRadioButton lossyRadioButton;
-    protected javax.swing.JCheckBox normalizeCheckBox;
-    protected javax.swing.JScrollPane outputScrollPane;
-    protected javax.swing.JTextArea outputTextArea;
-    protected javax.swing.JButton printCommandsButton;
-    protected javax.swing.JProgressBar progressBar;
-    protected javax.swing.JCheckBox selectedCheckBox;
-    protected javax.swing.JButton sourceButton;
-    protected javax.swing.JTextField sourceTextField;
-    protected javax.swing.JLabel suffixLabel;
-    protected javax.swing.JTextField suffixTextField;
-    protected javax.swing.JTree trackTree;
-    protected javax.swing.JScrollPane treeScrollPane;
-    protected javax.swing.JPanel videoDemuxOptionsPanel;
-    protected javax.swing.JCheckBox y4mCheckBox;
-    protected javax.swing.JLabel y4mLabel;
-    // End of variables declaration//GEN-END:variables
 }
