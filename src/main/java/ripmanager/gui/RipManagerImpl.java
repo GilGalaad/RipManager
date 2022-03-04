@@ -141,12 +141,10 @@ public class RipManagerImpl extends RipManager {
     }
 
     private Path getDeepestExistingDirectory(Path path) {
-        log.info(path);
         while (path.getParent() != null) {
             path = path.getParent();
-            log.info(path);
             if (Files.exists(path) && Files.isDirectory(path)) {
-                return path;
+                return path.normalize();
             }
         }
         return Paths.get("").toAbsolutePath();
