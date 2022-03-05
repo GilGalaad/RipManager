@@ -318,6 +318,7 @@ public class BackgroundWorker extends SwingWorker<WorkerOutcome, Void> {
                 if (isCancelled()) {
                     log.info("Cancelling execution and killing children processes");
                     p.descendants().forEachOrdered(ProcessHandle::destroyForcibly);
+                    p.destroyForcibly();
                     throw new RuntimeException();
                 }
                 if (line.contains("Starting 2nd pass...")) {
@@ -369,6 +370,7 @@ public class BackgroundWorker extends SwingWorker<WorkerOutcome, Void> {
                 if (isCancelled()) {
                     log.info("Cancelling execution and killing children processes");
                     p.descendants().forEachOrdered(ProcessHandle::destroyForcibly);
+                    p.destroyForcibly();
                     throw new RuntimeException();
                 }
                 Matcher m = FFMPEG_DURATION_PATTERN.matcher(line);
@@ -431,6 +433,7 @@ public class BackgroundWorker extends SwingWorker<WorkerOutcome, Void> {
                 if (isCancelled()) {
                     log.info("Cancelling execution and killing children processes");
                     p.descendants().forEachOrdered(ProcessHandle::destroyForcibly);
+                    p.destroyForcibly();
                     throw new RuntimeException();
                 }
                 if (isEmpty(line)) {
@@ -490,6 +493,7 @@ public class BackgroundWorker extends SwingWorker<WorkerOutcome, Void> {
                 if (isCancelled()) {
                     log.info("Cancelling execution and killing children processes");
                     p.descendants().forEachOrdered(ProcessHandle::destroyForcibly);
+                    p.destroyForcibly();
                     throw new RuntimeException();
                 }
                 Matcher m = ENCODE_TOTALFRAMES_PATTERN.matcher(line);
@@ -555,6 +559,7 @@ public class BackgroundWorker extends SwingWorker<WorkerOutcome, Void> {
                 if (isCancelled()) {
                     log.info("Cancelling execution and killing children processes");
                     p.descendants().forEachOrdered(ProcessHandle::destroyForcibly);
+                    p.destroyForcibly();
                     throw new RuntimeException();
                 }
                 // we capture stdout but don't send anything to output window
