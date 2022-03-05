@@ -3,8 +3,8 @@ package ripmanager.gui;
 import lombok.extern.log4j.Log4j2;
 import ripmanager.common.ExceptionUtils;
 import ripmanager.engine.BackgroundWorker;
-import ripmanager.engine.model.*;
 import ripmanager.engine.enums.Encoder;
+import ripmanager.engine.model.*;
 
 import javax.swing.*;
 import javax.swing.event.*;
@@ -20,7 +20,6 @@ import java.nio.file.Paths;
 import java.util.List;
 
 import static ripmanager.common.CommonUtils.formatInterval;
-import static ripmanager.common.CommonUtils.isEmpty;
 
 @Log4j2
 public class RipManagerImpl extends RipManager {
@@ -90,6 +89,8 @@ public class RipManagerImpl extends RipManager {
         trackTree.setEnabled(false);
         progressBar.setValue(0);
         etaLabel.setText(DEFAULT_ETA);
+        trackTree.clearSelection();
+        clearDemuxOptions();
         disableDemuxOptions();
         disableEncodingOptions();
     }
@@ -119,13 +120,7 @@ public class RipManagerImpl extends RipManager {
 
     private void sourceButtonClicked() {
         UIManager.put("FileChooser.readOnly", Boolean.TRUE);
-        JFileChooser fc;
-        if (!isEmpty(sourceTextField.getText())) {
-            fc = new JFileChooser(getDeepestExistingDirectory(Paths.get(sourceTextField.getText())).toFile());
-        } else {
-            // fallback to process current dir
-            fc = new JFileChooser(Paths.get("").toAbsolutePath().toFile());
-        }
+        JFileChooser fc = new JFileChooser(getDeepestExistingDirectory(Paths.get(sourceTextField.getText())).toFile());
         fc.setFileSelectionMode(JFileChooser.FILES_ONLY);
         fc.setMultiSelectionEnabled(false);
         int ret = fc.showOpenDialog(this);

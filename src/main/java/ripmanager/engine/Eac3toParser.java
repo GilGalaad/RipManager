@@ -1,9 +1,9 @@
 package ripmanager.engine;
 
 import lombok.extern.log4j.Log4j2;
-import ripmanager.engine.model.*;
 import ripmanager.engine.enums.AudioCodec;
 import ripmanager.engine.enums.Language;
+import ripmanager.engine.model.*;
 
 import java.util.*;
 import java.util.regex.Matcher;
