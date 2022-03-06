@@ -115,7 +115,7 @@ public class RipManagerImpl extends RipManager {
         }
         etaLabel.setText(DEFAULT_ETA);
         configureDemuxOptions();
-        enableEncodingOptions();
+        configureEncodingOptions();
     }
 
     private void sourceButtonClicked() {
@@ -131,7 +131,12 @@ public class RipManagerImpl extends RipManager {
             tracks = null;
             trackTree.setModel(null);
             outputTextArea.setText(null);
-            clearDemuxOptions();
+            printCommandsButton.setEnabled(false);
+            demuxButton.setEnabled(false);
+            encodeButton.setEnabled(false);
+            demuxEncodeButton.setEnabled(false);
+            configureDemuxOptions();
+            configureEncodingOptions();
         }
     }
 
@@ -178,7 +183,6 @@ public class RipManagerImpl extends RipManager {
             tracks = null;
             trackTree.setModel(null);
             outputTextArea.setText(null);
-            clearDemuxOptions();
             // starting worker
             worker = new BackgroundWorker(WorkerCommand.ANALYZE, source, null, encodingOptions, this);
             worker.addPropertyChangeListener(this::workerPropertyChanged);
@@ -513,13 +517,20 @@ public class RipManagerImpl extends RipManager {
         y4mCheckBox.setEnabled(true);
     }
 
-    // called when worker ends to re-enable demux options based on eventual selected node
-    // or after a node selection to update demux options
+    private void configureEncodingOptions() {
+        if (tracks != null && !tracks.isEmpty()) {
+            enableEncodingOptions();
+        } else {
+            disableEncodingOptions();
+        }
+    }
+
+    // called whenever you need to update the demux option based on the eventual selected node
     private void configureDemuxOptions() {
-        // if no node selected, nothing to do
-        if (trackTree.getModel() == null || trackTree.getLastSelectedPathComponent() == null) {
-            disableDemuxOptions();
+        // if no node selected, disable all
+        if (tracks == null || trackTree.getModel() == null || trackTree.getLastSelectedPathComponent() == null) {
             clearDemuxOptions();
+            disableDemuxOptions();
             return;
         }
         DefaultMutableTreeNode node = (DefaultMutableTreeNode) trackTree.getLastSelectedPathComponent();

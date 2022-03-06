@@ -205,6 +205,8 @@ public class RipManager extends javax.swing.JFrame {
 
         encodingOptionsPanel.setBorder(javax.swing.BorderFactory.createTitledBorder("Encoding options"));
 
+        encoderComboBox.setEnabled(false);
+
         encoderLabel.setText("Encoder");
 
         crfLabel.setText("CRF");
@@ -216,10 +218,14 @@ public class RipManager extends javax.swing.JFrame {
         crfSlider.setPaintTicks(true);
         crfSlider.setSnapToTicks(true);
         crfSlider.setValue(18);
+        crfSlider.setEnabled(false);
+
+        suffixTextField.setEnabled(false);
 
         suffixLabel.setText("Suffix");
 
         y4mCheckBox.setBorder(null);
+        y4mCheckBox.setEnabled(false);
 
         y4mLabel.setText("--y4m");
 
