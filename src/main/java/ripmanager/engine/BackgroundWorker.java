@@ -134,21 +134,30 @@ public class BackgroundWorker extends SwingWorker<WorkerOutcome, Void> {
     }
 
     private WorkerOutcome doPrintCommands() {
-        List<List<String>> commands = generateCommands();
-        if (commands.isEmpty()) {
+        List<List<String>> demuxCommands = generateDemuxCommands();
+        if (demuxCommands.isEmpty()) {
             return new WorkerOutcome(WorkerOutcome.Status.OK, "No demux command generated", null);
         }
-        List<String> lines = commands.stream().map(i -> String.join(" ", i)).collect(Collectors.toList());
-        for (var line : lines) {
-            output.append(line).append(System.lineSeparator());
-        }
-        // finishing with an empty line to allow copy&paste on console
+        // print demux commands
+        String encodeCommand = String.join(" ", generateEncodeCommand());
+        String sourceDir = source.getParent().toString().contains(" ") ? "\"" + source.getParent() + "\"" : source.getParent().toString();
+        output.append("CD /D ").append(sourceDir).append(System.lineSeparator());
+        demuxCommands.forEach(i -> output.append(String.join(" ", i)).append(System.lineSeparator()));
+        // leave an empty line
         output.append(System.lineSeparator());
+        // print encode env and command
+        output.append("SET ENC_SOURCE_FILE=").append(source).append(System.lineSeparator());
+        if (tracks.stream().filter(i -> i.getType() == TrackType.VIDEO).map(i -> (VideoTrack) i).anyMatch(i -> i.getDemuxOptions().isSelected() && i.getDemuxOptions().isConvertToHuff())) {
+            output.append("SET VPY_SOURCE_FILE=").append(source.resolveSibling("video_huff.mkv")).append(System.lineSeparator());
+        } else {
+            output.append("SET VPY_SOURCE_FILE=").append(source).append(System.lineSeparator());
+        }
+        output.append(encodeCommand).append(System.lineSeparator());
         return new WorkerOutcome(WorkerOutcome.Status.OK, output.toString(), null);
     }
 
     private WorkerOutcome doDemux() throws Exception {
-        List<List<String>> commands = generateCommands();
+        List<List<String>> commands = generateDemuxCommands();
         if (commands.isEmpty()) {
             return new WorkerOutcome(WorkerOutcome.Status.OK, "No demux command generated", null);
         }
@@ -179,23 +188,7 @@ public class BackgroundWorker extends SwingWorker<WorkerOutcome, Void> {
     }
 
     private WorkerOutcome doEncode() throws Exception {
-        List<String> args = new ArrayList<>();
-        args.add("python");
-        args.add("c:\\dvd-rip\\python\\encode.py");
-        if (encodingOptions.getCrf() != 18) {
-            args.add("--crf");
-            args.add(Integer.toString(encodingOptions.getCrf()));
-        }
-        if (!isEmpty(encodingOptions.getSuffix())) {
-            args.add("--suffix");
-            args.add(encodingOptions.getSuffix());
-        }
-        if (encodingOptions.isY4m()) {
-            args.add("--y4m");
-        }
-        if (encodingOptions.getEncoder() != Encoder.AUTODETECT) {
-            args.add(encodingOptions.getEncoder().toString());
-        }
+        List<String> args = generateEncodeCommand();
         ProcessOutcome outcome = runEncode(args);
         if (outcome.getExitCode() != 0) {
             return new WorkerOutcome(WorkerOutcome.Status.KO, output.toString(), null);
@@ -211,17 +204,18 @@ public class BackgroundWorker extends SwingWorker<WorkerOutcome, Void> {
         return doEncode();
     }
 
-    private List<List<String>> generateCommands() {
+    private List<List<String>> generateDemuxCommands() {
         List<List<String>> ret = new ArrayList<>();
         List<String> eac3to = new ArrayList<>();
+        String sourceFile = command == WorkerCommand.PRINT_COMMANDS && source.getFileName().toString().contains(" ") ? "\"" + source.getFileName() + "\"" : source.getFileName().toString();
         eac3to.add("eac3to");
-        eac3to.add(source.getFileName().toString());
+        eac3to.add(sourceFile);
 
         // check if chapters must be extracted with mkvextract
         ChaptersTrack chaps = tracks.stream().filter(i -> i.getType() == TrackType.CHAPTERS).map(i -> (ChaptersTrack) i).filter(i -> i.getDemuxOptions().isSelected()).findFirst().orElse(null);
         if (chaps != null) {
             if (chaps.getProperties().isUseMkvExtract()) {
-                ret.add(Arrays.asList("mkvextract", source.getFileName().toString(), "chapters", "-s", "chaps.txt"));
+                ret.add(Arrays.asList("mkvextract", sourceFile, "chapters", "-s", "chaps.txt"));
             } else {
                 eac3to.add(String.format("%s:%s", chaps.getIndex(), "chaps.txt"));
             }
@@ -234,15 +228,15 @@ public class BackgroundWorker extends SwingWorker<WorkerOutcome, Void> {
             if (video.getDemuxOptions().isConvertToHuff()) {
                 if (command == WorkerCommand.PRINT_COMMANDS) {
                     // if we are just printing commands for manual execution, make the output quieter and keep ffmsindex on the same line
-                    ffmmpeg.add(Arrays.asList("ffmpeg", "-hide_banner", "-loglevel", "warning", "-stats", "-y", "-i", source.getFileName().toString(), "-map", "0:v:0", "-c:v", "ffvhuff", "video_huff.mkv", "&&", "ffmsindex.exe", "video_huff.mkv"));
+                    ffmmpeg.add(Arrays.asList("ffmpeg", "-hide_banner", "-loglevel", "warning", "-stats", "-y", "-i", sourceFile, "-map", "0:v:0", "-c:v", "ffvhuff", "video_huff.mkv", "&&", "ffmsindex.exe", "video_huff.mkv"));
                 } else {
                     // if we are demuxing, make it more verbose to collect eta information and put ffmsindex on dedicate line
-                    ffmmpeg.add(Arrays.asList("ffmpeg", "-hide_banner", "-y", "-i", source.getFileName().toString(), "-map", "0:v:0", "-c:v", "ffvhuff", "video_huff.mkv"));
+                    ffmmpeg.add(Arrays.asList("ffmpeg", "-hide_banner", "-y", "-i", sourceFile, "-map", "0:v:0", "-c:v", "ffvhuff", "video_huff.mkv"));
                     ffmmpeg.add(Arrays.asList("ffmsindex", "-f", "video_huff.mkv"));
                 }
             } else {
                 // if we don't need intermediate ffvhuff file, index the original
-                ffmmpeg.add(Arrays.asList("ffmsindex", "-f", source.getFileName().toString()));
+                ffmmpeg.add(Arrays.asList("ffmsindex", "-f", sourceFile));
             }
         }
 
@@ -293,6 +287,27 @@ public class BackgroundWorker extends SwingWorker<WorkerOutcome, Void> {
         // adding ffmpeg at the end
         ret.addAll(ffmmpeg);
 
+        return ret;
+    }
+
+    private List<String> generateEncodeCommand() {
+        List<String> ret = new ArrayList<>();
+        ret.add("python");
+        ret.add("c:\\dvd-rip\\python\\encode.py");
+        if (encodingOptions.getCrf() != 18) {
+            ret.add("--crf");
+            ret.add(Integer.toString(encodingOptions.getCrf()));
+        }
+        if (!isEmpty(encodingOptions.getSuffix())) {
+            ret.add("--suffix");
+            ret.add(encodingOptions.getSuffix());
+        }
+        if (encodingOptions.isY4m()) {
+            ret.add("--y4m");
+        }
+        if (encodingOptions.getEncoder() != Encoder.AUTODETECT) {
+            ret.add(encodingOptions.getEncoder().toString());
+        }
         return ret;
     }
 
@@ -474,15 +489,13 @@ public class BackgroundWorker extends SwingWorker<WorkerOutcome, Void> {
         ProcessBuilder pb = new ProcessBuilder(args.toArray(new String[0]));
         pb.directory(source.getParent().toFile());
         pb.redirectErrorStream(true);
-        // customizing environment to provide custom path to vapoursynth.vpy and encode.py, only if we have analyze data
-        if (tracks != null && !tracks.isEmpty()) {
-            Map<String, String> env = pb.environment();
-            env.put("ENC_SOURCE_FILE", source.toString());
-            if (tracks.stream().filter(i -> i.getType() == TrackType.VIDEO).map(i -> (VideoTrack) i).anyMatch(i -> i.getDemuxOptions().isSelected() && i.getDemuxOptions().isConvertToHuff())) {
-                env.put("VPY_SOURCE_FILE", source.resolveSibling("video_huff.mkv").toString());
-            } else {
-                env.put("VPY_SOURCE_FILE", source.toString());
-            }
+        // customizing environment to provide custom path to vapoursynth.vpy and encode.py
+        Map<String, String> env = pb.environment();
+        env.put("ENC_SOURCE_FILE", source.toString());
+        if (tracks.stream().filter(i -> i.getType() == TrackType.VIDEO).map(i -> (VideoTrack) i).anyMatch(i -> i.getDemuxOptions().isSelected() && i.getDemuxOptions().isConvertToHuff())) {
+            env.put("VPY_SOURCE_FILE", source.resolveSibling("video_huff.mkv").toString());
+        } else {
+            env.put("VPY_SOURCE_FILE", source.toString());
         }
         long startTime = System.nanoTime();
         long startTime2ndPass = 0;

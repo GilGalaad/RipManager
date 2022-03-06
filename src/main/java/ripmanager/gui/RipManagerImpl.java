@@ -101,7 +101,7 @@ public class RipManagerImpl extends RipManager {
         analyzeButton.setEnabled(true);
         printCommandsButton.setEnabled(tracks != null && !tracks.isEmpty());
         demuxButton.setEnabled(tracks != null && !tracks.isEmpty());
-        encodeButton.setEnabled(true);
+        encodeButton.setEnabled(tracks != null && !tracks.isEmpty());
         demuxEncodeButton.setEnabled(tracks != null && !tracks.isEmpty());
         analyzeButton.setText("Analyze");
         printCommandsButton.setText("Print Commands");

@@ -98,6 +98,7 @@ public class RipManager extends javax.swing.JFrame {
         demuxButton.setEnabled(false);
 
         encodeButton.setText("Encode");
+        encodeButton.setEnabled(false);
 
         demuxEncodeButton.setText("Demux & Encode");
         demuxEncodeButton.setEnabled(false);
