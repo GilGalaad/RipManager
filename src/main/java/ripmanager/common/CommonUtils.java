@@ -17,17 +17,13 @@ public class CommonUtils {
         return s.replaceAll("\\s+$", "");
     }
 
-    public static Long calcEta(long startTime, int percent) {
-        switch (percent) {
-            case 0:
-                return null;
-            case 100:
-                return 0L;
-            default:
-                long elapsed = System.nanoTime() - startTime;
-                long total = elapsed * 100L / percent;
-                return (total - elapsed) / 1_000_000_000L;
+    public static Long calcEta(long startTime, BigDecimal percent) {
+        if (percent == null || percent.compareTo(BigDecimal.ZERO) == 0 || percent.compareTo(BigDecimal.valueOf(100)) == 0) {
+            return 0L;
         }
+        long elapsed = System.nanoTime() - startTime;
+        long totalTime = BigDecimal.valueOf(elapsed).multiply(BigDecimal.valueOf(100)).divide(percent, 0, RoundingMode.HALF_UP).longValue();
+        return (totalTime - elapsed) / 1_000_000_000L;
     }
 
     public static String formatInterval(long interval) {
@@ -50,11 +46,11 @@ public class CommonUtils {
         return ret;
     }
 
-    public static int calcPercent(long currentTime, long totalTime) {
-        if (totalTime == 0) {
-            return 0;
+    public static BigDecimal calcPercent(long currentQuantity, long totalQuantity) {
+        if (totalQuantity == 0) {
+            return BigDecimal.ZERO;
         }
-        return BigDecimal.valueOf(currentTime).multiply(BigDecimal.valueOf(100L)).divide(BigDecimal.valueOf(totalTime), 0, RoundingMode.HALF_UP).toBigInteger().intValue();
+        return BigDecimal.valueOf(currentQuantity).multiply(BigDecimal.valueOf(100)).divide(BigDecimal.valueOf(totalQuantity), 2, RoundingMode.HALF_UP);
     }
 
     public static String smartElapsed(long elapsedNano) {

@@ -11,6 +11,8 @@ import ripmanager.gui.RipManagerImpl;
 import javax.swing.*;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -345,7 +347,7 @@ public class BackgroundWorker extends SwingWorker<WorkerOutcome, Void> {
                     if (command == WorkerCommand.ANALYZE || line.contains("process")) {
                         int progress = Integer.parseInt(m.group("progress"));
                         setProgress(Math.min(progress, 100));
-                        firePropertyChange("eta", null, calcEta(startTime2ndPass != 0 ? startTime2ndPass : startTime, getProgress()));
+                        firePropertyChange("eta", null, calcEta(startTime2ndPass != 0 ? startTime2ndPass : startTime, BigDecimal.valueOf(progress)));
                     }
                     continue;
                 }
@@ -400,11 +402,12 @@ public class BackgroundWorker extends SwingWorker<WorkerOutcome, Void> {
                 if (m.matches()) {
                     long currentTime = parseInterval(m.group("time"));
                     if (duration != 0) {
-                        int progress = calcPercent(currentTime, duration);
-                        if (progress != getProgress()) {
-                            setProgress(Math.min(progress, 100));
-                            firePropertyChange("eta", null, calcEta(startTime, getProgress()));
+                        BigDecimal progress = calcPercent(currentTime, duration);
+                        int roundedProgress = progress.setScale(0, RoundingMode.HALF_UP).intValue();
+                        if (roundedProgress != getProgress()) {
+                            setProgress(Math.min(roundedProgress, 100));
                         }
+                        firePropertyChange("eta", null, calcEta(startTime, progress));
                     }
                     if (getLastOutputLine().startsWith("frame=")) {
                         removeLastOuputLine();
@@ -458,7 +461,7 @@ public class BackgroundWorker extends SwingWorker<WorkerOutcome, Void> {
                 if (m.matches()) {
                     int progress = Integer.parseInt(m.group("progress"));
                     setProgress(Math.min(progress, 100));
-                    firePropertyChange("eta", null, calcEta(startTime, progress));
+                    firePropertyChange("eta", null, calcEta(startTime, BigDecimal.valueOf(progress)));
                 }
                 if (getLastOutputLine().startsWith("Indexing")) {
                     removeLastOuputLine();
@@ -525,11 +528,12 @@ public class BackgroundWorker extends SwingWorker<WorkerOutcome, Void> {
                 if (pm != null) {
                     long currentFrame = Long.parseLong(pm.group("frame"));
                     if (totalFrames != 0) {
-                        int progress = calcPercent(currentFrame, totalFrames);
-                        if (progress != getProgress()) {
-                            setProgress(Math.min(progress, 100));
-                            firePropertyChange("eta", null, calcEta(startTime2ndPass != 0 ? startTime2ndPass : startTime, getProgress()));
+                        BigDecimal progress = calcPercent(currentFrame, totalFrames);
+                        int roundedProgress = progress.setScale(0, RoundingMode.HALF_UP).intValue();
+                        if (roundedProgress != getProgress()) {
+                            setProgress(Math.min(roundedProgress, 100));
                         }
+                        firePropertyChange("eta", null, calcEta(startTime2ndPass != 0 ? startTime2ndPass : startTime, progress));
                     }
                 }
                 // test previous line to check if it must be deleted or not
