@@ -37,6 +37,7 @@ public class BackgroundWorker extends SwingWorker<WorkerOutcome, Void> {
     private static final Pattern FFMSINDEX_PROGRESS_PATTERN = Pattern.compile("Indexing, please wait\\.{3}\\s*(?<progress>\\d{1,3})%\\s*");
     private static final Pattern ENCODE_TOTALFRAMES_PATTERN = Pattern.compile("Detected length: (?<frames>\\d+) frames");
     private static final Pattern VSPIPE_PROGRESS_PATTERN = Pattern.compile("Frame: (?<frame>\\d+)/.*");
+    private static final Pattern X264_X265_FIRST_LINE_PATTERN = Pattern.compile("y4m\\s+\\[info]:.*");
     private static final Pattern X264_X265_PROGRESS_PATTERN1 = Pattern.compile("(?<frame>\\d+) frames:.*");
     private static final Pattern X264_X265_PROGRESS_PATTERN2 = Pattern.compile("\\[\\d+\\.\\d+%] (?<frame>\\d+)/\\d+ frames,.*");
 
@@ -516,13 +517,18 @@ public class BackgroundWorker extends SwingWorker<WorkerOutcome, Void> {
                 if (m.matches()) {
                     totalFrames = Long.parseLong(m.group("frames"));
                 }
-                if (encodingOptions.isY4m() && line.startsWith("Output ")) {
-                    setProgress(100);
-                    firePropertyChange("eta", null, 0L);
-                }
-                if (encodingOptions.isY4m() && line.startsWith("y4m [info]:")) {
-                    startTime2ndPass = System.nanoTime();
-                    setProgress(0);
+                if (encodingOptions.isY4m()) {
+                    if (line.startsWith("Output ")) {
+                        setProgress(100);
+                        firePropertyChange("eta", null, 0L);
+                    } else {
+                        Matcher flm = X264_X265_FIRST_LINE_PATTERN.matcher(line);
+                        if (flm.matches()) {
+                            startTime2ndPass = System.nanoTime();
+                            setProgress(0);
+                            firePropertyChange("eta", null, 0L);
+                        }
+                    }
                 }
                 Matcher pm = getFirstMatcherForMultiplePatterns(line, progressPatterns);
                 if (pm != null) {
