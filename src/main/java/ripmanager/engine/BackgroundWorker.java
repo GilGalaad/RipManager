@@ -231,7 +231,7 @@ public class BackgroundWorker extends SwingWorker<WorkerOutcome, Void> {
             if (video.getDemuxOptions().isConvertToHuff()) {
                 if (command == WorkerCommand.PRINT_COMMANDS) {
                     // if we are just printing commands for manual execution, make the output quieter and keep ffmsindex on the same line
-                    ffmmpeg.add(Arrays.asList("ffmpeg", "-hide_banner", "-loglevel", "warning", "-stats", "-y", "-i", sourceFile, "-map", "0:v:0", "-c:v", "ffvhuff", "video_huff.mkv", "&&", "ffmsindex.exe", "video_huff.mkv"));
+                    ffmmpeg.add(Arrays.asList("ffmpeg", "-hide_banner", "-loglevel", "warning", "-stats", "-y", "-i", sourceFile, "-map", "0:v:0", "-c:v", "ffvhuff", "video_huff.mkv", "&&", "ffmsindex", "-f", "video_huff.mkv"));
                 } else {
                     // if we are demuxing, make it more verbose to collect eta information and put ffmsindex on dedicate line
                     ffmmpeg.add(Arrays.asList("ffmpeg", "-hide_banner", "-y", "-i", sourceFile, "-map", "0:v:0", "-c:v", "ffvhuff", "video_huff.mkv"));
@@ -254,6 +254,7 @@ public class BackgroundWorker extends SwingWorker<WorkerOutcome, Void> {
                 }
                 if (audioTrack.getDemuxOptions().getExtractCore()) {
                     eac3to.add(String.format("%s:audio.%s.%s.core.%s", audioTrack.getIndex(), audioTrack.getProperties().getLanguage().getCode(), audioTrack.getIndex(), codec.getCoreExtension()));
+                    eac3to.add("-core");
                 }
                 if (strategy == LosslessDemuxStrategy.KEEP_BOTH || strategy == LosslessDemuxStrategy.KEEP_LOSSY) {
                     if (audioTrack.getProperties().getChannels() <= 2) {
