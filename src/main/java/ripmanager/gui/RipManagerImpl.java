@@ -4,6 +4,7 @@ import lombok.extern.log4j.Log4j2;
 import ripmanager.common.ExceptionUtils;
 import ripmanager.engine.BackgroundWorker;
 import ripmanager.engine.enums.Encoder;
+import ripmanager.engine.enums.TrackType;
 import ripmanager.engine.model.*;
 
 import javax.swing.*;

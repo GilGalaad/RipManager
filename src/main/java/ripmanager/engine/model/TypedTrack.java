@@ -3,6 +3,7 @@ package ripmanager.engine.model;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
+import ripmanager.engine.enums.TrackType;
 
 @Data
 @NoArgsConstructor

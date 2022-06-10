@@ -2,6 +2,7 @@ package ripmanager.engine.model;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import ripmanager.engine.enums.TrackType;
 
 @Data
 @NoArgsConstructor

@@ -1,4 +1,4 @@
-package ripmanager.engine.model;
+package ripmanager.engine.enums;
 
 public enum TrackType {
     VIDEO,
