@@ -37,7 +37,8 @@ public class Eac3toParser {
             // skip warning lines typically at the end
             if (line.contains("The video framerate is correct, but rather unusual")
                 || line.contains("Bitstream parsing")
-                || line.contains("may still produce correct results")) {
+                || line.contains("may still produce correct results")
+                || line.contains("The video bitstream is encoded in a non-standard framerate")) {
                 continue;
             }
             if (TRACK_PATTERN.matcher(line).matches()) {
